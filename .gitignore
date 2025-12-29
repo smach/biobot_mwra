@@ -1,0 +1,23 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Downloaded PDFs (we only keep CSVs)
+data/raw/
+
+# Local environment
+.Renviron
+.env
+.claude/

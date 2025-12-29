@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MWRA COVID Wastewater Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .last-updated {
+            color: #27ae60;
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-end;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="date"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: white;
+            color: #333;
+            cursor: pointer;
+        }
+
+        select:focus, input[type="date"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-group span {
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .preset-btn {
+            padding: 8px 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 6px;
+            background: white;
+            color: #555;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .preset-btn:hover {
+            border-color: #3498db;
+            color: #3498db;
+        }
+
+        .preset-btn.active {
+            background: #3498db;
+            border-color: #3498db;
+            color: white;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        #chart {
+            width: 100%;
+            height: 450px;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .stat-box {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-box.north .stat-value { color: #2166ac; }
+        .stat-box.south .stat-value { color: #b2182b; }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 16px;
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+
+        footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 12px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .control-group {
+                width: 100%;
+            }
+
+            #chart {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MWRA COVID-19 Wastewater Surveillance</h1>
+            <p class="subtitle">Massachusetts Water Resources Authority Biobot Data</p>
+            <p class="last-updated" id="lastUpdated"></p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>System</label>
+                <select id="systemSelect">
+                    <option value="North">North</option>
+                    <option value="South">South</option>
+                    <option value="Both">Both</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Data Type</label>
+                <select id="dataType">
+                    <option value="daily">Daily</option>
+                    <option value="average">7-Day Avg</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Date Range</label>
+                <div class="preset-buttons">
+                    <button class="preset-btn active" data-days="90">90d</button>
+                    <button class="preset-btn" data-days="180">6mo</button>
+                    <button class="preset-btn" data-days="365">1yr</button>
+                    <button class="preset-btn" data-days="0">All</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Start</label>
+                <input type="date" id="startDate">
+            </div>
+
+            <div class="control-group">
+                <label>End</label>
+                <input type="date" id="endDate">
+            </div>
+
+            <div class="control-group">
+                <label>Options</label>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showCI" checked>
+                    <span>Show 95% CI</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div id="chart"><div class="loading">Loading data...</div></div>
+        </div>
+
+        <div class="stats" id="stats"></div>
+
+        <footer>
+            Data source: <a href="https://www.mwra.com/biobot/biobotdata.htm" target="_blank">MWRA Biobot Data</a>
+        </footer>
+    </div>
+
+    <script>
+        let rawData = [];
+        let currentPreset = 90;
+        let chart = null;
+
+        const colors = {
+            North: '#2166ac',
+            South: '#b2182b'
+        };
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            return lines.slice(1).map(line => {
+                const values = line.split(',');
+                const obj = {};
+                headers.forEach((h, i) => obj[h] = values[i]?.trim());
+                return obj;
+            });
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch('data/combined_data.csv');
+                if (!response.ok) throw new Error('Failed to load data');
+                const text = await response.text();
+                rawData = parseCSV(text);
+
+                rawData.forEach(d => {
+                    d.date = new Date(d.date);
+                    d.copies_per_ml = parseFloat(d.copies_per_ml) || null;
+                    d.seven_day_avg = parseFloat(d.seven_day_avg) || null;
+                    d.lower_ci = parseFloat(d.lower_ci) || null;
+                    d.upper_ci = parseFloat(d.upper_ci) || null;
+                });
+
+                rawData = rawData.filter(d => !isNaN(d.date.getTime()));
+                rawData.sort((a, b) => a.date - b.date);
+
+                const dates = rawData.map(d => d.date);
+                const minDate = new Date(Math.min(...dates));
+                const maxDate = new Date(Math.max(...dates));
+
+                document.getElementById('startDate').min = formatDate(minDate);
+                document.getElementById('startDate').max = formatDate(maxDate);
+                document.getElementById('endDate').min = formatDate(minDate);
+                document.getElementById('endDate').max = formatDate(maxDate);
+
+                setDateRange(90);
+
+                document.getElementById('lastUpdated').textContent =
+                    `Data through ${maxDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+
+                // Initialize chart
+                chart = echarts.init(document.getElementById('chart'));
+                window.addEventListener('resize', () => chart.resize());
+
+                updateChart();
+            } catch (error) {
+                document.getElementById('chart').innerHTML =
+                    `<div class="error">Error loading data: ${error.message}</div>`;
+            }
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function formatDateShort(date) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${months[date.getMonth()]} ${date.getDate()}`;
+        }
+
+        function setDateRange(days) {
+            const dates = rawData.map(d => d.date);
+            const maxDate = new Date(Math.max(...dates));
+            const minDate = new Date(Math.min(...dates));
+
+            document.getElementById('endDate').value = formatDate(maxDate);
+
+            if (days === 0) {
+                document.getElementById('startDate').value = formatDate(minDate);
+            } else {
+                const startDate = new Date(maxDate);
+                startDate.setDate(startDate.getDate() - days);
+                document.getElementById('startDate').value = formatDate(startDate);
+            }
+
+            currentPreset = days;
+            updatePresetButtons();
+        }
+
+        function updatePresetButtons() {
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.days) === currentPreset);
+            });
+        }
+
+        function getFilteredData() {
+            const system = document.getElementById('systemSelect').value;
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            endDate.setHours(23, 59, 59);
+
+            return rawData.filter(d => {
+                const dateOk = d.date >= startDate && d.date <= endDate;
+                const systemOk = system === 'Both' || d.system === system;
+                return dateOk && systemOk;
+            });
+        }
+
+        function updateChart() {
+            const data = getFilteredData();
+            const dataType = document.getElementById('dataType').value;
+            const showCI = document.getElementById('showCI').checked;
+            const system = document.getElementById('systemSelect').value;
+
+            if (data.length === 0) {
+                chart.clear();
+                return;
+            }
+
+            const systems = system === 'Both' ? ['North', 'South'] : [system];
+            const series = [];
+
+            systems.forEach(sys => {
+                const sysData = data.filter(d => d.system === sys);
+                const validData = sysData.filter(d => {
+                    const val = dataType === 'daily' ? d.copies_per_ml : d.seven_day_avg;
+                    return val !== null && !isNaN(val);
+                });
+
+                // Bar series
+                const barData = validData.map(d => {
+                    const val = dataType === 'daily' ? d.copies_per_ml : d.seven_day_avg;
+                    const lowerBound = d.lower_ci ? Math.round(val - d.lower_ci) : null;
+                    const upperBound = d.upper_ci ? Math.round(val + d.upper_ci) : null;
+                    return {
+                        value: [formatDate(d.date), val],
+                        itemStyle: { color: colors[sys] },
+                        tooltip: d.lower_ci && d.upper_ci && dataType === 'daily'
+                            ? `${sys}: ${Math.round(val)} (likely between ${lowerBound} and ${upperBound})`
+                            : `${sys}: ${Math.round(val)}`
+                    };
+                });
+
+                series.push({
+                    name: sys,
+                    type: 'bar',
+                    data: barData,
+                    barMaxWidth: 20
+                });
+
+                // Error bar series (using custom rendering)
+                if (showCI && dataType === 'daily') {
+                    const errorData = validData
+                        .filter(d => d.lower_ci && d.upper_ci)
+                        .map(d => {
+                            const val = d.copies_per_ml;
+                            const lowerBound = val - d.lower_ci;
+                            const upperBound = val + d.upper_ci;
+                            return [formatDate(d.date), lowerBound, upperBound];
+                        });
+
+                    series.push({
+                        name: sys + ' CI',
+                        type: 'custom',
+                        renderItem: function(params, api) {
+                            const xValue = api.value(0);
+                            const lowValue = api.value(1);
+                            const highValue = api.value(2);
+
+                            const lowPoint = api.coord([xValue, lowValue]);
+                            const highPoint = api.coord([xValue, highValue]);
+
+                            const halfWidth = 4;
+
+                            return {
+                                type: 'group',
+                                children: [
+                                    // Vertical line
+                                    {
+                                        type: 'line',
+                                        shape: {
+                                            x1: lowPoint[0],
+                                            y1: lowPoint[1],
+                                            x2: highPoint[0],
+                                            y2: highPoint[1]
+                                        },
+                                        style: {
+                                            stroke: '#000',
+                                            lineWidth: 1.5
+                                        }
+                                    },
+                                    // Bottom cap
+                                    {
+                                        type: 'line',
+                                        shape: {
+                                            x1: lowPoint[0] - halfWidth,
+                                            y1: lowPoint[1],
+                                            x2: lowPoint[0] + halfWidth,
+                                            y2: lowPoint[1]
+                                        },
+                                        style: {
+                                            stroke: '#000',
+                                            lineWidth: 1.5
+                                        }
+                                    },
+                                    // Top cap
+                                    {
+                                        type: 'line',
+                                        shape: {
+                                            x1: highPoint[0] - halfWidth,
+                                            y1: highPoint[1],
+                                            x2: highPoint[0] + halfWidth,
+                                            y2: highPoint[1]
+                                        },
+                                        style: {
+                                            stroke: '#000',
+                                            lineWidth: 1.5
+                                        }
+                                    }
+                                ]
+                            };
+                        },
+                        data: errorData,
+                        z: 100
+                    });
+                }
+            });
+
+            const option = {
+                title: {
+                    text: dataType === 'daily' ? 'Daily Viral Copies per mL' : '7-Day Average',
+                    left: 'center',
+                    textStyle: { fontSize: 14 }
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        if (params.data && params.data.tooltip) {
+                            return params.data.tooltip + '<br>' + params.data.value[0];
+                        }
+                        return '';
+                    }
+                },
+                legend: {
+                    data: systems,
+                    bottom: 0
+                },
+                grid: {
+                    left: 60,
+                    right: 20,
+                    top: 50,
+                    bottom: 50
+                },
+                xAxis: {
+                    type: 'category',
+                    axisLabel: {
+                        formatter: function(value) {
+                            const d = new Date(value);
+                            return formatDateShort(d);
+                        },
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'Copies/mL',
+                    nameLocation: 'middle',
+                    nameGap: 45,
+                    axisLabel: {
+                        formatter: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                },
+                series: series,
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        start: 0,
+                        end: 100
+                    }
+                ]
+            };
+
+            chart.setOption(option, true);
+            updateStats(data, systems, dataType);
+        }
+
+        function updateStats(data, systems, dataType) {
+            const statsContainer = document.getElementById('stats');
+            let html = '';
+
+            systems.forEach(sys => {
+                const sysData = data.filter(d => d.system === sys);
+                const values = sysData
+                    .map(d => dataType === 'daily' ? d.copies_per_ml : d.seven_day_avg)
+                    .filter(v => v !== null && !isNaN(v));
+
+                if (values.length > 0) {
+                    const latest = values[values.length - 1];
+                    const max = Math.max(...values);
+                    const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+
+                    html += `
+                        <div class="stat-box ${sys.toLowerCase()}">
+                            <div class="stat-value">${latest.toLocaleString()}</div>
+                            <div class="stat-label">${sys} Latest</div>
+                        </div>
+                        <div class="stat-box ${sys.toLowerCase()}">
+                            <div class="stat-value">${max.toLocaleString()}</div>
+                            <div class="stat-label">${sys} Max</div>
+                        </div>
+                        <div class="stat-box ${sys.toLowerCase()}">
+                            <div class="stat-value">${avg.toLocaleString()}</div>
+                            <div class="stat-label">${sys} Avg</div>
+                        </div>
+                    `;
+                }
+            });
+
+            statsContainer.innerHTML = html;
+        }
+
+        // Event listeners
+        document.getElementById('systemSelect').addEventListener('change', updateChart);
+        document.getElementById('dataType').addEventListener('change', updateChart);
+        document.getElementById('startDate').addEventListener('change', () => {
+            currentPreset = null;
+            updatePresetButtons();
+            updateChart();
+        });
+        document.getElementById('endDate').addEventListener('change', () => {
+            currentPreset = null;
+            updatePresetButtons();
+            updateChart();
+        });
+        document.getElementById('showCI').addEventListener('change', updateChart);
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setDateRange(parseInt(btn.dataset.days));
+                updateChart();
+            });
+        });
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>

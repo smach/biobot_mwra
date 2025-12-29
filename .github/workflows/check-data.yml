@@ -1,0 +1,154 @@
+name: Check MWRA Biobot Data
+
+on:
+  # Run twice daily at 13:48 and 21:48 UTC
+  schedule:
+    - cron: '48 13,21 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+  # Run on push to main for testing
+  push:
+    branches: [main]
+    paths:
+      - 'R/**'
+      - '.github/workflows/check-data.yml'
+      - 'run_monitor.R'
+      - 'docs/**'
+
+jobs:
+  check-data:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      issues: write
+      pages: write
+      id-token: write
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.3'
+          use-public-rspm: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            libxml2-dev \
+            libpoppler-cpp-dev
+
+      - name: Install R packages
+        run: |
+          install.packages(c(
+            "rvest",
+            "httr2",
+            "pdftools",
+            "dplyr",
+            "readr",
+            "ggplot2",
+            "scales",
+            "jsonlite"
+          ), repos = "https://cloud.r-project.org")
+        shell: Rscript {0}
+
+      - name: Run data check
+        id: check
+        run: Rscript run_monitor.R
+
+      - name: Commit and push changes
+        if: steps.check.outputs.data_updated == 'true'
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ output/ state/ docs/
+          git diff --staged --quiet || git commit -m "Update MWRA Biobot data (${{ steps.check.outputs.sample_date }})"
+          git push
+
+      - name: Create notification issue
+        if: steps.check.outputs.data_updated == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sampleDate = '${{ steps.check.outputs.sample_date }}';
+            const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+            const pagesUrl = `https://${context.repo.owner}.github.io/${context.repo.repo}`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `MWRA Biobot Data Updated - ${sampleDate}`,
+              body: `## New Wastewater Data Available
+
+**Sample collection date:** ${sampleDate}
+
+### Interactive Dashboard
+
+**[View Interactive Charts](${pagesUrl})** - Explore the data with customizable date ranges and options.
+
+### Static Plots
+
+- [North System 90-day plot](${repoUrl}/blob/main/output/plots/north_90days.png)
+- [South System 90-day plot](${repoUrl}/blob/main/output/plots/south_90days.png)
+
+### Data Files
+
+- [Combined CSV](${repoUrl}/blob/main/data/processed/combined_data.csv)
+- [North System CSV](${repoUrl}/blob/main/data/processed/north_system.csv)
+- [South System CSV](${repoUrl}/blob/main/data/processed/south_system.csv)
+
+---
+*This issue was automatically created by the MWRA Biobot Data Monitor.*`,
+              labels: ['data-update', 'automated']
+            });
+
+      - name: Upload plots artifact
+        if: steps.check.outputs.data_updated == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plots-${{ steps.check.outputs.sample_date }}
+          path: output/plots/
+          retention-days: 30
+
+  # Deploy to GitHub Pages (runs after check-data or on docs changes)
+  deploy-pages:
+    needs: check-data
+    if: always() && needs.check-data.result != 'failure'
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Get latest including any commits from check-data job
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'docs'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
