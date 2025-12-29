@@ -34,13 +34,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup R with r2u
-        uses: eddelbuettel/linux-setup-r@master
+      - name: Setup r2u
+        uses: eddelbuettel/github-actions/r2u-setup@master
 
       - name: Install R packages via r2u
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get install -y --no-install-recommends \
             r-cran-rvest \
             r-cran-httr2 \
             r-cran-pdftools \
