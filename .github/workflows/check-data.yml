@@ -82,34 +82,28 @@ jobs:
         with:
           script: |
             const sampleDate = '${{ steps.check.outputs.sample_date }}';
-            const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
-            const pagesUrl = `https://${context.repo.owner}.github.io/${context.repo.repo}`;
+            const repoUrl = 'https://github.com/' + context.repo.owner + '/' + context.repo.repo;
+            const pagesUrl = 'https://' + context.repo.owner + '.github.io/' + context.repo.repo;
+
+            const body = '## New Wastewater Data Available\n\n' +
+              '**Sample collection date:** ' + sampleDate + '\n\n' +
+              '### Interactive Dashboard\n\n' +
+              '**[View Interactive Charts](' + pagesUrl + ')** - Explore the data with customizable date ranges and options.\n\n' +
+              '### Static Plots\n\n' +
+              '- [North System 90-day plot](' + repoUrl + '/blob/main/output/plots/north_90days.png)\n' +
+              '- [South System 90-day plot](' + repoUrl + '/blob/main/output/plots/south_90days.png)\n\n' +
+              '### Data Files\n\n' +
+              '- [Combined CSV](' + repoUrl + '/blob/main/data/processed/combined_data.csv)\n' +
+              '- [North System CSV](' + repoUrl + '/blob/main/data/processed/north_system.csv)\n' +
+              '- [South System CSV](' + repoUrl + '/blob/main/data/processed/south_system.csv)\n\n' +
+              '---\n' +
+              '*This issue was automatically created by the MWRA Biobot Data Monitor.*';
 
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `MWRA Biobot Data Updated - ${sampleDate}`,
-              body: `## New Wastewater Data Available
-
-**Sample collection date:** ${sampleDate}
-
-### Interactive Dashboard
-
-**[View Interactive Charts](${pagesUrl})** - Explore the data with customizable date ranges and options.
-
-### Static Plots
-
-- [North System 90-day plot](${repoUrl}/blob/main/output/plots/north_90days.png)
-- [South System 90-day plot](${repoUrl}/blob/main/output/plots/south_90days.png)
-
-### Data Files
-
-- [Combined CSV](${repoUrl}/blob/main/data/processed/combined_data.csv)
-- [North System CSV](${repoUrl}/blob/main/data/processed/north_system.csv)
-- [South System CSV](${repoUrl}/blob/main/data/processed/south_system.csv)
-
----
-*This issue was automatically created by the MWRA Biobot Data Monitor.*`,
+              title: 'MWRA Biobot Data Updated - ' + sampleDate,
+              body: body,
               labels: ['data-update', 'automated']
             });
 
