@@ -193,8 +193,8 @@
             letter-spacing: 0.5px;
         }
 
-        .stat-box.north .stat-value { color: #2166ac; }
-        .stat-box.south .stat-value { color: #b2182b; }
+        .stat-box.north .stat-value { color: #1a5d1a; }
+        .stat-box.south .stat-value { color: #2166ac; }
 
         footer {
             text-align: center;
@@ -244,8 +244,8 @@
             <div class="control-group">
                 <label>System</label>
                 <select id="systemSelect">
-                    <option value="North">North</option>
                     <option value="South">South</option>
+                    <option value="North">North</option>
                     <option value="Both">Both</option>
                 </select>
             </div>
@@ -304,8 +304,8 @@
         let chart = null;
 
         const colors = {
-            North: '#2166ac',
-            South: '#b2182b'
+            North: '#1a5d1a',
+            South: '#2166ac'
         };
 
         function parseCSV(text) {

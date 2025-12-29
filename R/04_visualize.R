@@ -64,11 +64,11 @@ create_plot <- function(data, days = NULL, title = "COVID-19 Wastewater Data",
 
     p <- p +
       ggplot2::scale_fill_manual(
-        values = c("North" = "#2166ac", "South" = "#b2182b"),
+        values = c("North" = "#1a5d1a", "South" = "#2166ac"),
         name = "System"
       )
   } else {
-    system_color <- if (systems_present == "North") "#2166ac" else "#b2182b"
+    system_color <- if (systems_present == "North") "#1a5d1a" else "#2166ac"
     p <- p +
       ggplot2::geom_col(fill = system_color, width = 0.8)
 

@@ -3,7 +3,7 @@
 # Checks for new COVID wastewater data and updates visualizations
 
 # Set to TRUE to force update even when no new data
-force <- TRUE
+force <- FALSE
 
 # Load packages
 library(rvest)
