@@ -1,16 +1,22 @@
 # MWRA Biobot COVID Wastewater Monitor
 
+## tl;dr
+
+See and download metro Boston Covid wastewater testing data as a [CSV](https://github.com/smach/biobot_mwra/blob/main/data/processed/combined_data.csv) and not just a PDF. Explore the data in an [interactive dashboard](https://smach.github.io/biobot_mwra/) that lets you set date ranges and view error bars.
+
+## Longer Overview
+
 This project, written partly by Claude Opus 4.5, streamlines and improves some code I wrote pre-GenAI years ago to monitor [Massachusetts Water Resources Authority (MWRA) Biobot Covid wastewater testing data](https://www.mwra.com/biobot/biobotdata.htm). I never made that code public because, well, I wasn't super proud of it 😅 -- I wrote it in a hurry at the start of the pandemic and never really rationalized it or cleaned it up.
 
 That code still works, including sending me an email whenever the data updates! You can see my R Shiny app (but not the code) at [https://apps.machlis.com/shiny/ma_corona_virus/](https://apps.machlis.com/shiny/ma_corona_virus/). Most of the tabs haven't updated for several years, but the main opening screen should still be updating.
 
-But back to this repo. Thanks to extra Claude Code usage during New Year's week, I decided to ask Claude Opus 4.5 to write some basic code to track and visualize the MWRA covid testing data. I still had to steer it to create the visualizations I wanted (the error bars took a surprising amount of back and forth until I just uploaded the code I'd written a few years ago, for example. It was satisfying to still be able to do some coding better than generative AI!).
+But back to this repo. I decided to ask Claude Opus 4.5 to write some basic code to track and visualize the MWRA covid testing data. I still had to steer it to create the visualizations I wanted (the error bars took a surprising amount of back and forth until I just uploaded the code I'd written a few years ago, for example. It was satisfying to still be able to do some coding better than generative AI!).
 
 And, for the first time, I tried Posit's [Claude Skill for testing R packages](https://github.com/posit-dev/skills/tree/main/r-lib/testing-r-packages), which wrote _all_ the tests for this project!
 
-IMPORTANT: I did not rigorously review the test code to make sure it tests exactly what I'd want to test. Use this repo at your own risk!
+IMPORTANT: I did not rigorously review the test code to make sure it tests exactly what I'd want to test. Use this repository at your own risk!
 
-Below is an explanation of code in this repo, written mostly by Claude and lightly edited by me:
+Below is an explanation of code in the repo, written mostly by Claude and lightly edited by me:
 
 ## View the Data
 
