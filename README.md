@@ -46,6 +46,10 @@ Features:
 - Adjustable date range (90 days, 6 months, 1 year, all data)
 - Optional 95% confidence intervals
 
+Note that if you want to look at the interactive dashboard file locally on your own system, it's at `docs/index.html` _but it needs a Web server to function,_ you can't just open the index.html file in a browser. If you have the R servr package installed (you can install it with `install.packages("servr")` ) you can run 
+
+`servr::httd("docs")`
+
 ## Requirements
 
 Want to download and run this yourself? You'll need these R packages:
