@@ -17,9 +17,12 @@ check_for_updates <- function() {
   page_url <- paste0(base_url, "/biobot/biobotdata.htm")
 
   tryCatch({
-    # Fetch the webpage with retry logic
+    # Fetch the webpage with retry logic (using httr2 for browser-like headers)
     page <- with_retry(function() {
-      rvest::read_html(page_url)
+      resp <- httr2::request(page_url) |>
+        httr2::req_user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36") |>
+        httr2::req_perform()
+      rvest::read_html(httr2::resp_body_string(resp))
     })
 
     # Get full page text
