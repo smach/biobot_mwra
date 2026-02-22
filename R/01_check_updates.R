@@ -43,7 +43,7 @@ check_for_updates <- function() {
 
       # Extract PDF link
       all_hrefs <- rvest::html_attr(rvest::html_elements(page, "a"), "href")
-      pdf_links <- all_hrefs[grepl("mwradata.*-datapdf", all_hrefs, ignore.case = TRUE)]
+      pdf_links <- all_hrefs[grepl("mwradata.*-data", all_hrefs, ignore.case = TRUE)]
 
       if (length(pdf_links) == 0) {
         stop("Could not find PDF link on webpage")
@@ -56,7 +56,11 @@ check_for_updates <- function() {
     sample_date <- as.Date(result$sample_date_raw, format = "%m/%d/%Y")
     sample_date_str <- format(sample_date, "%Y-%m-%d")
     pdf_url <- result$pdf_url
-    full_pdf_url <- paste0(base_url, pdf_url)
+    full_pdf_url <- if (grepl("^https?://", pdf_url)) {
+      pdf_url
+    } else {
+      paste0(base_url, pdf_url)
+    }
 
     # Load previous state and compare
     state <- load_state()
