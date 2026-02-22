@@ -115,9 +115,9 @@ describe("date pattern matching", {
 
 # Test PDF link pattern
 describe("PDF link pattern matching", {
-  it("matches mwradata-datapdf pattern", {
+  it("matches mwradata-datapdf pattern (old format)", {
     hrefs <- c("/other/file.pdf", "/biobot/mwradata123-datapdf.pdf", "/another.html")
-    pattern <- "mwradata.*-datapdf"
+    pattern <- "mwradata.*-data"
 
     matches <- hrefs[grepl(pattern, hrefs, ignore.case = TRUE)]
 
@@ -125,9 +125,19 @@ describe("PDF link pattern matching", {
     expect_equal(matches, "/biobot/mwradata123-datapdf.pdf")
   })
 
+  it("matches mwradata-data pattern (new format)", {
+    hrefs <- c("/other/file.pdf", "/media/file/mwradata20260220-data", "/another.html")
+    pattern <- "mwradata.*-data"
+
+    matches <- hrefs[grepl(pattern, hrefs, ignore.case = TRUE)]
+
+    expect_length(matches, 1)
+    expect_equal(matches, "/media/file/mwradata20260220-data")
+  })
+
   it("is case insensitive", {
     hrefs <- c("/biobot/MWRADATA-DATAPDF.PDF")
-    pattern <- "mwradata.*-datapdf"
+    pattern <- "mwradata.*-data"
 
     matches <- hrefs[grepl(pattern, hrefs, ignore.case = TRUE)]
 
