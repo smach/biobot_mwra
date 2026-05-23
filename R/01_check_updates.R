@@ -21,13 +21,8 @@ check_for_updates <- function() {
     # Retries cover both network failures AND cases where the page loads
     # but contains unexpected content (e.g., maintenance page).
     result <- with_retry(function() {
-      resp <- httr2::request(page_url) |>
-        httr2::req_headers(
-          Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-        ) |>
-        httr2::req_user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36") |>
-        httr2::req_perform()
-      page <- rvest::read_html(httr2::resp_body_string(resp))
+      html <- impersonate_fetch(page_url)
+      page <- rvest::read_html(html)
 
       # Extract date from "samples collected through MM/DD/YYYY"
       page_text <- rvest::html_text2(page)
