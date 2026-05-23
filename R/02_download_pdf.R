@@ -12,22 +12,10 @@ download_pdf <- function(pdf_url, output_path = "data/latest_data.pdf") {
     # Ensure directory exists
     dir.create(dirname(output_path), showWarnings = FALSE, recursive = TRUE)
 
-    # Download with retry logic
+    # Download with retry logic (curl-impersonate writes directly to disk
+    # so binary PDFs are preserved without text-mode mangling).
     with_retry(function() {
-      req <- httr2::request(pdf_url) |>
-        httr2::req_headers(
-          `User-Agent` = "Mozilla/5.0 (compatible; MWRA-Biobot-Monitor/1.0)"
-        ) |>
-        httr2::req_timeout(60)
-
-      resp <- httr2::req_perform(req)
-
-      if (httr2::resp_status(resp) != 200) {
-        stop(sprintf("HTTP error: %d", httr2::resp_status(resp)))
-      }
-
-      # Write binary content to file (overwrites any existing)
-      writeBin(httr2::resp_body_raw(resp), output_path)
+      impersonate_fetch(pdf_url, output_path = output_path, timeout = 60)
 
       if (!file.exists(output_path) || file.size(output_path) == 0) {
         stop("Downloaded file is empty or missing")
