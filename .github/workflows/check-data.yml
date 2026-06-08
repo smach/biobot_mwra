@@ -49,6 +49,11 @@ jobs:
           echo "$install_dir" >> "$GITHUB_PATH"
           "$install_dir/curl_chrome116" --version | head -n1
 
+      - name: Setup Chrome (Imperva challenge fallback)
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
       - name: Install R packages via r2u
         run: |
           sudo apt-get install -y --no-install-recommends \
@@ -60,6 +65,10 @@ jobs:
             r-cran-ggplot2 \
             r-cran-scales \
             r-cran-jsonlite
+          # chromote drives Chrome via CDP for the Imperva-challenge fallback.
+          # r2u carries it on most Ubuntu releases; fall back to CRAN otherwise.
+          sudo apt-get install -y --no-install-recommends r-cran-chromote \
+            || sudo Rscript -e 'install.packages("chromote", repos="https://cloud.r-project.org")'
 
       - name: Run data check
         id: check

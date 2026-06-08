@@ -93,7 +93,8 @@ with_retry <- function(fn, max_attempts = 3, delay = 5) {
 impersonate_fetch <- function(url,
                               output_path = NULL,
                               timeout = 60,
-                              browser = "chrome116") {
+                              browser = "chrome116",
+                              cookie_header = NULL) {
   curl_bin <- Sys.getenv("CURL_IMPERSONATE_BIN", unset = paste0("curl_", browser))
 
   to_temp <- is.null(output_path)
@@ -104,10 +105,13 @@ impersonate_fetch <- function(url,
 
   args <- c(
     "-sS", "--fail", "--location",
-    "--max-time", as.character(timeout),
-    "--output", shQuote(output_path),
-    shQuote(url)
+    "--max-time", as.character(timeout)
   )
+  if (!is.null(cookie_header) && nzchar(cookie_header)) {
+    args <- c(args, "--cookie", shQuote(cookie_header))
+  }
+  args <- c(args, "--output", shQuote(output_path), shQuote(url))
+
   status <- suppressWarnings(system2(curl_bin, args))
   if (status != 0) {
     stop(sprintf("curl-impersonate (%s) failed with exit code %d for URL: %s",
@@ -120,6 +124,89 @@ impersonate_fetch <- function(url,
   } else {
     invisible(output_path)
   }
+}
+
+#' Detect the Imperva "Please wait while your request is being verified"
+#' bot-challenge interstitial that MWRA's site occasionally serves in place
+#' of real content.
+is_imperva_challenge <- function(html) {
+  is.character(html) &&
+    length(html) == 1 &&
+    grepl("Please wait while your request is being verified",
+          html, fixed = TRUE)
+}
+
+#' Fetch a URL by driving a real Chromium via the Chrome DevTools Protocol.
+#'
+#' Used as a fallback when curl-impersonate gets the Imperva challenge page:
+#' a real browser can actually execute the obfuscated JS, receive the
+#' clearance cookie, and reload to the real content.
+#'
+#' @return List with `html` (the rendered page source) and `cookie_header`
+#'   (a string suitable for curl's --cookie, so subsequent requests on the
+#'   same host can reuse the cleared session).
+chromote_fetch <- function(url, timeout = 45) {
+  if (!requireNamespace("chromote", quietly = TRUE)) {
+    stop("chromote package is not installed - cannot fall back to headless browser")
+  }
+
+  # GitHub Actions runners need --no-sandbox; --disable-dev-shm-usage
+  # avoids /dev/shm exhaustion on container runners. Set once per process.
+  if (!isTRUE(getOption(".biobot_chromote_initialised", FALSE))) {
+    chromote::set_default_chromote_object(
+      chromote::Chromote$new(
+        browser = chromote::Chrome$new(
+          args = c("--no-sandbox", "--disable-dev-shm-usage")
+        )
+      )
+    )
+    options(.biobot_chromote_initialised = TRUE)
+  }
+
+  b <- chromote::ChromoteSession$new()
+  on.exit(try(b$close(), silent = TRUE), add = TRUE)
+
+  # Basic anti-detection so Imperva's challenge actually clears rather than
+  # flagging us as a bot and stalling forever.
+  b$Page$addScriptToEvaluateOnNewDocument(
+    source = "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
+  )
+  b$Network$setUserAgentOverride(
+    userAgent = paste0(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ",
+      "AppleWebKit/537.36 (KHTML, like Gecko) ",
+      "Chrome/126.0.0.0 Safari/537.36"
+    )
+  )
+
+  b$Page$navigate(url)
+
+  # The challenge swaps in real content after the JS solves; poll for it
+  # to clear rather than guessing a fixed sleep.
+  deadline <- Sys.time() + timeout
+  html <- ""
+  repeat {
+    res <- b$Runtime$evaluate("document.documentElement.outerHTML")
+    val <- res$result$value
+    if (!is.null(val)) html <- val
+    if (nchar(html) > 1000 && !is_imperva_challenge(html)) break
+    if (Sys.time() >= deadline) break
+    Sys.sleep(1)
+  }
+
+  if (is_imperva_challenge(html)) {
+    stop(sprintf("Imperva challenge did not clear within %ds", timeout))
+  }
+
+  ck <- b$Network$getCookies()$cookies
+  cookie_header <- if (length(ck) > 0) {
+    paste(vapply(ck, function(c) paste0(c$name, "=", c$value), character(1)),
+          collapse = "; ")
+  } else {
+    NULL
+  }
+
+  list(html = html, cookie_header = cookie_header)
 }
 
 #' Set GitHub Actions output variable

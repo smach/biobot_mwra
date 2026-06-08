@@ -36,6 +36,20 @@ message("Step 1: Checking for updates...")
 update_info <- check_for_updates()
 
 if (!is.null(update_info$error)) {
+  # If both curl-impersonate and the headless-Chrome fallback failed to
+  # clear Imperva, treat as a soft skip - the next scheduled cron run
+  # (~8 hours later) will retry and usually succeed. Hard-failing here
+  # would produce noisy CI emails for a known transient condition.
+  if (grepl("Imperva challenge|Please wait while your request is being verified",
+            update_info$error)) {
+    message("")
+    message("Bot challenge persisted across curl-impersonate and headless Chrome.")
+    message("Skipping this run; next scheduled check will retry.")
+    log_check()
+    set_gha_output("data_updated", "false")
+    message("Finished at: ", Sys.time())
+    quit(save = "no", status = 0)
+  }
   message("ERROR: Check failed - ", update_info$error)
   set_gha_output("data_updated", "false")
   stop("Check failed")
@@ -65,7 +79,8 @@ if (!update_info$is_new && !force) {
   message("Step 2: Downloading PDF...")
   message("  URL: ", update_info$full_pdf_url)
 
-  pdf_path <- download_pdf(update_info$full_pdf_url)
+  pdf_path <- download_pdf(update_info$full_pdf_url,
+                           cookie_header = update_info$cookie_header)
 
   if (is.null(pdf_path)) {
     set_gha_output("data_updated", "false")

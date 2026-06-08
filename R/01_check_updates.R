@@ -21,7 +21,20 @@ check_for_updates <- function() {
     # Retries cover both network failures AND cases where the page loads
     # but contains unexpected content (e.g., maintenance page).
     result <- with_retry(function() {
+      cookie_header <- NULL
       html <- impersonate_fetch(page_url)
+
+      # curl-impersonate clears Imperva's TLS-fingerprint tier roughly 80%
+      # of the time. When Imperva escalates to its JS challenge, the body
+      # is the "Please wait..." interstitial - fall back to a real headless
+      # Chrome that can execute the challenge and earn a clearance cookie.
+      if (is_imperva_challenge(html)) {
+        message("  Imperva challenge detected, falling back to headless Chrome...")
+        ch <- chromote_fetch(page_url)
+        html <- ch$html
+        cookie_header <- ch$cookie_header
+      }
+
       page <- rvest::read_html(html)
 
       # Extract date from "samples collected through MM/DD/YYYY"
@@ -44,7 +57,9 @@ check_for_updates <- function() {
         stop("Could not find PDF link on webpage")
       }
 
-      list(sample_date_raw = date_match[2], pdf_url = pdf_links[1])
+      list(sample_date_raw = date_match[2],
+           pdf_url = pdf_links[1],
+           cookie_header = cookie_header)
     }, max_attempts = 3, delay = 30)
 
     # Parse the date (MM/DD/YYYY format)
@@ -73,6 +88,7 @@ check_for_updates <- function() {
       pdf_url = pdf_url,
       full_pdf_url = full_pdf_url,
       previous_date = state$last_sample_date,
+      cookie_header = result$cookie_header,
       error = NULL
     )
 
@@ -84,6 +100,7 @@ check_for_updates <- function() {
       pdf_url = NULL,
       full_pdf_url = NULL,
       previous_date = NULL,
+      cookie_header = NULL,
       error = e$message
     )
   })
