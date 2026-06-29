@@ -88,12 +88,12 @@ with_retry <- function(fn, max_attempts = 3, delay = 5) {
 #'   read back as a UTF-8 string and returned.
 #' @param timeout Request timeout in seconds
 #' @param browser Which browser to impersonate (matches the wrapper script
-#'   name, e.g. "chrome116" -> curl_chrome116). Override via the
+#'   name, e.g. "chrome146" -> curl_chrome146). Override via the
 #'   CURL_IMPERSONATE_BIN env var if you need a non-standard path.
 impersonate_fetch <- function(url,
                               output_path = NULL,
                               timeout = 60,
-                              browser = "chrome116") {
+                              browser = "chrome146") {
   curl_bin <- Sys.getenv("CURL_IMPERSONATE_BIN", unset = paste0("curl_", browser))
 
   to_temp <- is.null(output_path)
