@@ -21,6 +21,11 @@ download_pdf <- function(pdf_url, output_path = "data/latest_data.pdf") {
         stop("Downloaded file is empty or missing")
       }
 
+      # Guard against a bot-challenge page (HTML, HTTP 200) being saved as a PDF
+      if (!is_pdf_file(output_path)) {
+        stop("Downloaded file is not a PDF (possibly a bot-challenge page)")
+      }
+
       TRUE
     })
 
