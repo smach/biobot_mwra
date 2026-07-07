@@ -85,62 +85,59 @@ describe("date parsing", {
   })
 })
 
-# Test regex pattern for date extraction
-describe("date pattern matching", {
-  it("extracts date from 'samples collected through' text", {
-    text <- "Some text samples collected through 12/25/2024 more text"
-    pattern <- "samples collected through (\\d{1,2}/\\d{1,2}/\\d{4})"
-    match <- regmatches(text, regexec(pattern, text))[[1]]
-
-    expect_length(match, 2)
-    expect_equal(match[2], "12/25/2024")
+# Test PDF URL construction
+describe("build_pdf_url()", {
+  it("builds the dated /media/file/ URL", {
+    url <- build_pdf_url(as.Date("2026-06-25"))
+    expect_equal(url, "https://www.mwra.com/media/file/mwradata20260625-datapdf")
   })
 
-  it("handles single-digit dates in pattern", {
-    text <- "samples collected through 1/5/2024"
-    pattern <- "samples collected through (\\d{1,2}/\\d{1,2}/\\d{4})"
-    match <- regmatches(text, regexec(pattern, text))[[1]]
-
-    expect_equal(match[2], "1/5/2024")
-  })
-
-  it("returns empty when pattern not found", {
-    text <- "No date here"
-    pattern <- "samples collected through (\\d{1,2}/\\d{1,2}/\\d{4})"
-    match <- regmatches(text, regexec(pattern, text))[[1]]
-
-    expect_length(match, 0)
+  it("zero-pads single-digit months and days", {
+    url <- build_pdf_url(as.Date("2026-01-05"))
+    expect_equal(url, "https://www.mwra.com/media/file/mwradata20260105-datapdf")
   })
 })
 
-# Test PDF link pattern
-describe("PDF link pattern matching", {
-  it("matches mwradata-datapdf pattern (old format)", {
-    hrefs <- c("/other/file.pdf", "/biobot/mwradata123-datapdf.pdf", "/another.html")
-    pattern <- "mwradata.*-data"
-
-    matches <- hrefs[grepl(pattern, hrefs, ignore.case = TRUE)]
-
-    expect_length(matches, 1)
-    expect_equal(matches, "/biobot/mwradata123-datapdf.pdf")
+# Test extracting the posting date back out of a PDF URL
+describe("parse_pdf_url_date()", {
+  it("parses the date from an absolute URL", {
+    d <- parse_pdf_url_date("https://www.mwra.com/media/file/mwradata20260625-datapdf")
+    expect_equal(d, as.Date("2026-06-25"))
   })
 
-  it("matches mwradata-data pattern (new format)", {
-    hrefs <- c("/other/file.pdf", "/media/file/mwradata20260220-data", "/another.html")
-    pattern <- "mwradata.*-data"
-
-    matches <- hrefs[grepl(pattern, hrefs, ignore.case = TRUE)]
-
-    expect_length(matches, 1)
-    expect_equal(matches, "/media/file/mwradata20260220-data")
+  it("parses the date from a relative URL", {
+    d <- parse_pdf_url_date("/media/file/mwradata20260625-datapdf")
+    expect_equal(d, as.Date("2026-06-25"))
   })
 
-  it("is case insensitive", {
-    hrefs <- c("/biobot/MWRADATA-DATAPDF.PDF")
-    pattern <- "mwradata.*-data"
+  it("returns NA when no date is present", {
+    expect_true(is.na(parse_pdf_url_date("/some/other/path")))
+    expect_true(is.na(parse_pdf_url_date(NULL)))
+  })
+})
 
-    matches <- hrefs[grepl(pattern, hrefs, ignore.case = TRUE)]
+# Test the PDF magic-byte check used to distinguish real PDFs from challenge pages
+describe("is_pdf_file()", {
+  it("returns TRUE for a file starting with %PDF", {
+    f <- tempfile(fileext = ".pdf")
+    on.exit(unlink(f), add = TRUE)
+    writeBin(charToRaw("%PDF-1.7\nbinary..."), f)
+    expect_true(is_pdf_file(f))
+  })
 
-    expect_length(matches, 1)
+  it("returns FALSE for an HTML bot-challenge page", {
+    f <- tempfile(fileext = ".html")
+    on.exit(unlink(f), add = TRUE)
+    writeChar("<html>Please wait while your request is being verified...</html>",
+              f, eos = NULL)
+    expect_false(is_pdf_file(f))
+  })
+
+  it("returns FALSE for a missing or empty file", {
+    expect_false(is_pdf_file(tempfile()))
+    f <- tempfile()
+    file.create(f)
+    on.exit(unlink(f), add = TRUE)
+    expect_false(is_pdf_file(f))
   })
 })

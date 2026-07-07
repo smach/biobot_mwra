@@ -88,12 +88,12 @@ with_retry <- function(fn, max_attempts = 3, delay = 5) {
 #'   read back as a UTF-8 string and returned.
 #' @param timeout Request timeout in seconds
 #' @param browser Which browser to impersonate (matches the wrapper script
-#'   name, e.g. "chrome116" -> curl_chrome116). Override via the
+#'   name, e.g. "chrome146" -> curl_chrome146). Override via the
 #'   CURL_IMPERSONATE_BIN env var if you need a non-standard path.
 impersonate_fetch <- function(url,
                               output_path = NULL,
                               timeout = 60,
-                              browser = "chrome116") {
+                              browser = "chrome146") {
   curl_bin <- Sys.getenv("CURL_IMPERSONATE_BIN", unset = paste0("curl_", browser))
 
   to_temp <- is.null(output_path)
@@ -120,6 +120,61 @@ impersonate_fetch <- function(url,
   } else {
     invisible(output_path)
   }
+}
+
+#' Download a URL with curl-impersonate, returning the HTTP status code
+#'
+#' Unlike impersonate_fetch(), this does NOT use --fail: the response body is
+#' written to output_path regardless of status, and the integer HTTP status is
+#' returned so callers can distinguish "not found" (404) from a real document
+#' (200) from a transport failure. This is what lets us probe candidate PDF
+#' URLs without treating a 404 as a hard error.
+#'
+#' @param url URL to fetch
+#' @param output_path File path to write the response body to
+#' @param timeout Request timeout in seconds
+#' @param browser Which browser to impersonate (see impersonate_fetch)
+#' @return Integer HTTP status code, or NA_integer_ if no HTTP response was
+#'   received (DNS/connection/timeout failure)
+impersonate_http_status <- function(url,
+                                    output_path,
+                                    timeout = 60,
+                                    browser = "chrome146") {
+  curl_bin <- Sys.getenv("CURL_IMPERSONATE_BIN", unset = paste0("curl_", browser))
+
+  args <- c(
+    "-sS", "--location",
+    "--max-time", as.character(timeout),
+    "--output", shQuote(output_path),
+    "--write-out", shQuote("%{http_code}"),
+    shQuote(url)
+  )
+  out <- suppressWarnings(system2(curl_bin, args, stdout = TRUE, stderr = FALSE))
+
+  if (length(out) == 0) return(NA_integer_)
+  status <- suppressWarnings(as.integer(tail(out, 1)))
+  # curl writes "000" via --write-out when it never got an HTTP response
+  if (length(status) == 0 || is.na(status) || status == 0) {
+    NA_integer_
+  } else {
+    status
+  }
+}
+
+#' Check whether a file on disk is a real PDF
+#'
+#' Imperva-style bot challenges are served as HTML with a 200 status, so a
+#' size/exists check alone can't tell a genuine PDF from a challenge page.
+#' This checks the magic bytes at the start of the file.
+#'
+#' @param path Path to the file
+#' @return TRUE if the file begins with the "%PDF" signature
+is_pdf_file <- function(path) {
+  if (!file.exists(path) || file.size(path) < 5) return(FALSE)
+  con <- file(path, "rb")
+  on.exit(close(con))
+  magic <- readBin(con, what = "raw", n = 4L)
+  length(magic) == 4L && identical(rawToChar(magic), "%PDF")
 }
 
 #' Set GitHub Actions output variable
