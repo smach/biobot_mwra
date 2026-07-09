@@ -35,7 +35,35 @@ message("")
 message("Step 1: Checking for updates...")
 update_info <- check_for_updates()
 
-if (!is.null(update_info$error)) {
+# Maximum consecutive bot-challenge runs to tolerate before treating the
+# situation as a genuine outage (~2.5 days at twice-daily runs).
+CHALLENGE_LIMIT <- 5
+
+if (identical(update_info$status, "challenge")) {
+  # Transient Imperva bot challenge: not real data and not a genuine error.
+  # Exit cleanly (green) so it doesn't raise a false alarm -- unless it has
+  # persisted across many consecutive runs, in which case the bypass is
+  # probably broken and we fail loudly.
+  count <- record_challenge()
+  message("")
+  message("MWRA served a bot-challenge page (", count,
+          " consecutive run(s) affected).")
+  set_gha_output("data_updated", "false")
+
+  if (count > CHALLENGE_LIMIT) {
+    stop(sprintf(paste0(
+      "Bot challenge has persisted for %d consecutive runs (limit %d). ",
+      "The curl-impersonate bypass may no longer work and needs attention."),
+      count, CHALLENGE_LIMIT))
+  }
+
+  message("Treating as transient; the next run should recover. Exiting cleanly.")
+  message("Finished at: ", Sys.time())
+  message("========================================")
+  quit(save = "no", status = 0)
+}
+
+if (identical(update_info$status, "error") || !is.null(update_info$error)) {
   message("ERROR: Check failed - ", update_info$error)
   set_gha_output("data_updated", "false")
   stop("Check failed")

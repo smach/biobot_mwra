@@ -179,6 +179,63 @@ describe("set_gha_output()", {
   })
 })
 
+describe("is_bot_challenge()", {
+  it("detects the Imperva challenge interstitial", {
+    html <- paste(
+      readLines(test_fixture_path("challenge_page.html"), warn = FALSE),
+      collapse = "\n"
+    )
+    expect_true(is_bot_challenge(html))
+  })
+
+  it("returns FALSE for a normal data page", {
+    html <- paste(
+      readLines(test_fixture_path("normal_page.html"), warn = FALSE),
+      collapse = "\n"
+    )
+    expect_false(is_bot_challenge(html))
+  })
+
+  it("returns FALSE for NULL, NA, or empty input", {
+    expect_false(is_bot_challenge(NULL))
+    expect_false(is_bot_challenge(NA_character_))
+    expect_false(is_bot_challenge(character(0)))
+  })
+})
+
+describe("record_challenge()", {
+  it("increments the counter across calls and resets on log_check()", {
+    temp_dir <- withr::local_tempdir()
+    state_file <- file.path(temp_dir, "state.json")
+    jsonlite::write_json(
+      list(last_sample_date = "2026-07-01"),
+      state_file, auto_unbox = TRUE
+    )
+
+    # Point state helpers at the temp file
+    original_load_state <- load_state
+    original_save_state <- save_state
+    assign("load_state", function(sf = "state/last_update.json") {
+      jsonlite::read_json(state_file)
+    }, envir = .GlobalEnv)
+    assign("save_state", function(state, sf = "state/last_update.json") {
+      jsonlite::write_json(state, state_file, auto_unbox = TRUE, pretty = TRUE)
+    }, envir = .GlobalEnv)
+    on.exit({
+      assign("load_state", original_load_state, envir = .GlobalEnv)
+      assign("save_state", original_save_state, envir = .GlobalEnv)
+    }, add = TRUE)
+
+    expect_equal(record_challenge(), 1L)
+    expect_equal(record_challenge(), 2L)
+
+    # A successful check resets the counter
+    log_check()
+    loaded <- jsonlite::read_json(state_file)
+    expect_equal(loaded$consecutive_challenges, 0)
+  })
+})
+
 describe("log_check()", {
   it("updates last_check_time in existing state", {
     temp_dir <- withr::local_tempdir()

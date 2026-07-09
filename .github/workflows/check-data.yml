@@ -21,45 +21,28 @@ jobs:
   check-data:
     runs-on: ubuntu-latest
 
+    # Run inside the pinned image built by build-image.yml. R, all packages,
+    # and curl-impersonate are baked in, so there is no per-run package install
+    # (which is what used to fail intermittently with the rlang ABI mismatch).
+    container:
+      image: ghcr.io/${{ github.repository }}:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
     permissions:
       contents: write
       issues: write
       pages: write
       id-token: write
+      packages: read
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup r2u
-        uses: eddelbuettel/github-actions/r2u-setup@master
-
-      - name: Install curl-impersonate
-        run: |
-          set -euo pipefail
-          install_dir="$HOME/.local/curl-impersonate"
-          mkdir -p "$install_dir"
-          curl -fsSL \
-            https://github.com/lwthiker/curl-impersonate/releases/download/v0.6.1/curl-impersonate-v0.6.1.x86_64-linux-gnu.tar.gz \
-            | tar -xz -C "$install_dir"
-          chmod +x "$install_dir"/curl_* "$install_dir"/curl-impersonate-*
-          echo "$install_dir" >> "$GITHUB_PATH"
-          "$install_dir/curl_chrome116" --version | head -n1
-
-      - name: Install R packages via r2u
-        run: |
-          sudo apt-get install -y --no-install-recommends \
-            r-cran-rvest \
-            r-cran-httr2 \
-            r-cran-pdftools \
-            r-cran-dplyr \
-            r-cran-readr \
-            r-cran-ggplot2 \
-            r-cran-scales \
-            r-cran-jsonlite
+        uses: actions/checkout@v5
 
       - name: Run data check
         id: check
@@ -68,6 +51,9 @@ jobs:
       - name: Commit and push changes
         if: steps.check.outputs.data_updated == 'true'
         run: |
+          # Running as root inside the container, the checkout is owned by a
+          # different uid, so mark the workspace safe before touching git.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add data/ output/ state/ docs/
@@ -130,7 +116,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: main  # Get latest including any commits from check-data job
 
