@@ -36,6 +36,75 @@ describe("check_for_updates()", {
   })
 })
 
+describe("check_for_updates() status classification", {
+  # Fast with_retry stand-in: run the closure once so a stop() propagates
+  # straight to check_for_updates()'s handler (no real network, no sleeps).
+  fast_retry <- function(fn, ...) fn()
+
+  it("returns status 'challenge' on a bot-challenge page", {
+    html <- paste(
+      readLines(test_fixture_path("challenge_page.html"), warn = FALSE),
+      collapse = "\n"
+    )
+    original_fetch <- impersonate_fetch
+    original_retry <- with_retry
+    assign("impersonate_fetch", function(url, ...) html, envir = .GlobalEnv)
+    assign("with_retry", fast_retry, envir = .GlobalEnv)
+    on.exit({
+      assign("impersonate_fetch", original_fetch, envir = .GlobalEnv)
+      assign("with_retry", original_retry, envir = .GlobalEnv)
+    }, add = TRUE)
+
+    result <- check_for_updates()
+
+    expect_equal(result$status, "challenge")
+    expect_false(result$is_new)
+  })
+
+  it("returns status 'error' when a real page lacks the expected data", {
+    html <- "<html><body><p>Site under maintenance</p></body></html>"
+    original_fetch <- impersonate_fetch
+    original_retry <- with_retry
+    assign("impersonate_fetch", function(url, ...) html, envir = .GlobalEnv)
+    assign("with_retry", fast_retry, envir = .GlobalEnv)
+    on.exit({
+      assign("impersonate_fetch", original_fetch, envir = .GlobalEnv)
+      assign("with_retry", original_retry, envir = .GlobalEnv)
+    }, add = TRUE)
+
+    result <- check_for_updates()
+
+    expect_equal(result$status, "error")
+    expect_false(result$is_new)
+  })
+
+  it("returns status 'ok' and parses a valid page", {
+    html <- paste(
+      readLines(test_fixture_path("normal_page.html"), warn = FALSE),
+      collapse = "\n"
+    )
+    original_fetch <- impersonate_fetch
+    original_retry <- with_retry
+    original_load <- load_state
+    assign("impersonate_fetch", function(url, ...) html, envir = .GlobalEnv)
+    assign("with_retry", fast_retry, envir = .GlobalEnv)
+    assign("load_state", function(sf = "state/last_update.json") list(),
+           envir = .GlobalEnv)
+    on.exit({
+      assign("impersonate_fetch", original_fetch, envir = .GlobalEnv)
+      assign("with_retry", original_retry, envir = .GlobalEnv)
+      assign("load_state", original_load, envir = .GlobalEnv)
+    }, add = TRUE)
+
+    result <- check_for_updates()
+
+    expect_equal(result$status, "ok")
+    expect_equal(result$sample_date, "2026-07-01")
+    expect_equal(result$pdf_url, "/media/file/mwradata20260706-data")
+    expect_true(result$is_new)
+  })
+})
+
 # Test date comparison logic separately
 describe("date comparison logic", {
   it("correctly identifies newer dates", {

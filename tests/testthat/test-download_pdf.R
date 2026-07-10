@@ -1,7 +1,7 @@
 # Tests for R/02_download_pdf.R
 
 describe("download_pdf()", {
-  it("returns NULL when download fails", {
+  it("returns error status when download fails", {
     # Temporarily replace with_retry to simulate failure
     original_with_retry <- with_retry
     assign("with_retry", function(fn, ...) stop("Download failed"), envir = .GlobalEnv)
@@ -9,7 +9,8 @@ describe("download_pdf()", {
 
     result <- download_pdf("https://example.com/test.pdf")
 
-    expect_null(result)
+    expect_null(result$path)
+    expect_equal(result$status, "error")
   })
 
   it("creates output directory if it doesn't exist", {
@@ -31,7 +32,7 @@ describe("download_pdf()", {
     expect_true(dir.exists(dirname(output_path)))
   })
 
-  it("returns output path on successful download", {
+  it("returns output path and ok status on successful download", {
     temp_dir <- withr::local_tempdir()
     output_path <- file.path(temp_dir, "data.pdf")
 
@@ -46,11 +47,12 @@ describe("download_pdf()", {
 
     result <- download_pdf("https://example.com/test.pdf", output_path)
 
-    expect_equal(result, output_path)
+    expect_equal(result$path, output_path)
+    expect_equal(result$status, "ok")
     expect_true(file.exists(output_path))
   })
 
-  it("returns NULL when downloaded file is empty", {
+  it("returns error status when downloaded file is empty", {
     temp_dir <- withr::local_tempdir()
     output_path <- file.path(temp_dir, "data.pdf")
 
@@ -67,7 +69,8 @@ describe("download_pdf()", {
 
     result <- download_pdf("https://example.com/test.pdf", output_path)
 
-    expect_null(result)
+    expect_null(result$path)
+    expect_equal(result$status, "error")
   })
 
   it("overwrites existing file", {
@@ -88,7 +91,7 @@ describe("download_pdf()", {
 
     result <- download_pdf("https://example.com/test.pdf", output_path)
 
-    expect_equal(result, output_path)
+    expect_equal(result$path, output_path)
     new_content <- readBin(output_path, "raw", file.size(output_path))
     expect_equal(rawToChar(new_content), "new content that is longer")
   })
@@ -106,6 +109,83 @@ describe("download_pdf()", {
   })
 })
 
+describe("download_pdf() payload validation", {
+  # Fast with_retry stand-in so the real download closure runs without sleeps.
+  fast_retry <- function(fn, ...) fn()
+
+  it("classifies an HTML bot-challenge payload as a challenge and removes it", {
+    temp_dir <- withr::local_tempdir()
+    output_path <- file.path(temp_dir, "data.pdf")
+    challenge_html <- paste(
+      readLines(test_fixture_path("challenge_page.html"), warn = FALSE),
+      collapse = "\n"
+    )
+
+    original_fetch <- impersonate_fetch
+    original_retry <- with_retry
+    assign("impersonate_fetch", function(url, output_path = NULL, ...) {
+      writeLines(challenge_html, output_path)
+      invisible(output_path)
+    }, envir = .GlobalEnv)
+    assign("with_retry", fast_retry, envir = .GlobalEnv)
+    on.exit({
+      assign("impersonate_fetch", original_fetch, envir = .GlobalEnv)
+      assign("with_retry", original_retry, envir = .GlobalEnv)
+    }, add = TRUE)
+
+    result <- download_pdf("https://example.com/data.pdf", output_path)
+
+    expect_null(result$path)
+    expect_equal(result$status, "challenge")
+    expect_false(file.exists(output_path))
+  })
+
+  it("accepts a payload with a valid PDF header", {
+    temp_dir <- withr::local_tempdir()
+    output_path <- file.path(temp_dir, "data.pdf")
+
+    original_fetch <- impersonate_fetch
+    original_retry <- with_retry
+    assign("impersonate_fetch", function(url, output_path = NULL, ...) {
+      writeBin(charToRaw("%PDF-1.5\n%fake pdf body\n"), output_path)
+      invisible(output_path)
+    }, envir = .GlobalEnv)
+    assign("with_retry", fast_retry, envir = .GlobalEnv)
+    on.exit({
+      assign("impersonate_fetch", original_fetch, envir = .GlobalEnv)
+      assign("with_retry", original_retry, envir = .GlobalEnv)
+    }, add = TRUE)
+
+    result <- download_pdf("https://example.com/data.pdf", output_path)
+
+    expect_equal(result$status, "ok")
+    expect_equal(result$path, output_path)
+    expect_true(file.exists(output_path))
+  })
+
+  it("classifies non-PDF, non-challenge content as an error", {
+    temp_dir <- withr::local_tempdir()
+    output_path <- file.path(temp_dir, "data.pdf")
+
+    original_fetch <- impersonate_fetch
+    original_retry <- with_retry
+    assign("impersonate_fetch", function(url, output_path = NULL, ...) {
+      writeLines("<html><body>404 Not Found</body></html>", output_path)
+      invisible(output_path)
+    }, envir = .GlobalEnv)
+    assign("with_retry", fast_retry, envir = .GlobalEnv)
+    on.exit({
+      assign("impersonate_fetch", original_fetch, envir = .GlobalEnv)
+      assign("with_retry", original_retry, envir = .GlobalEnv)
+    }, add = TRUE)
+
+    result <- download_pdf("https://example.com/data.pdf", output_path)
+
+    expect_null(result$path)
+    expect_equal(result$status, "error")
+  })
+})
+
 describe("download_pdf() HTTP handling", {
   it("handles HTTP errors gracefully", {
     original_with_retry <- with_retry
@@ -116,7 +196,8 @@ describe("download_pdf() HTTP handling", {
 
     result <- download_pdf("https://example.com/notfound.pdf")
 
-    expect_null(result)
+    expect_null(result$path)
+    expect_equal(result$status, "error")
   })
 
   it("handles timeout errors gracefully", {
@@ -128,6 +209,7 @@ describe("download_pdf() HTTP handling", {
 
     result <- download_pdf("https://example.com/slow.pdf")
 
-    expect_null(result)
+    expect_null(result$path)
+    expect_equal(result$status, "error")
   })
 })

@@ -179,6 +179,45 @@ describe("set_gha_output()", {
   })
 })
 
+describe("is_bot_challenge()", {
+  it("detects the Imperva challenge interstitial", {
+    html <- paste(
+      readLines(test_fixture_path("challenge_page.html"), warn = FALSE),
+      collapse = "\n"
+    )
+    expect_true(is_bot_challenge(html))
+  })
+
+  it("returns FALSE for a normal data page", {
+    html <- paste(
+      readLines(test_fixture_path("normal_page.html"), warn = FALSE),
+      collapse = "\n"
+    )
+    expect_false(is_bot_challenge(html))
+  })
+
+  it("returns FALSE for NULL, NA, or empty input", {
+    expect_false(is_bot_challenge(NULL))
+    expect_false(is_bot_challenge(NA_character_))
+    expect_false(is_bot_challenge(character(0)))
+  })
+})
+
+describe("data_staleness_days()", {
+  it("returns days since last_sample_date", {
+    five_days_ago <- format(Sys.Date() - 5, "%Y-%m-%d")
+    expect_equal(
+      data_staleness_days(list(last_sample_date = five_days_ago)),
+      5
+    )
+  })
+
+  it("returns NA when no sample date is recorded", {
+    expect_true(is.na(data_staleness_days(list())))
+    expect_true(is.na(data_staleness_days(list(last_pdf_url = "/x"))))
+  })
+})
+
 describe("log_check()", {
   it("updates last_check_time in existing state", {
     temp_dir <- withr::local_tempdir()

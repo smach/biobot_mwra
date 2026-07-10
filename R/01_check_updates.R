@@ -11,17 +11,29 @@
 #'   - pdf_url: character, relative URL to the PDF
 #'   - full_pdf_url: character, full URL to the PDF
 #'   - previous_date: character, the previous sample date (or NULL)
+#'   - status: character, one of "ok", "challenge", or "error"
 #'   - error: character, error message if check failed (or NULL)
 check_for_updates <- function() {
   base_url <- "https://www.mwra.com"
   page_url <- paste0(base_url, "/biobot/biobotdata.htm")
 
+  # Reuse one cookie jar across retries so any Imperva cookie is replayed.
+  cookie_jar <- tempfile(fileext = ".cookies")
+  on.exit(unlink(cookie_jar), add = TRUE)
+
   tryCatch({
     # Fetch webpage and extract date + PDF link with retry logic.
-    # Retries cover both network failures AND cases where the page loads
-    # but contains unexpected content (e.g., maintenance page).
+    # Retries cover network failures, transient Imperva bot challenges, AND
+    # cases where the page loads but contains unexpected content.
     result <- with_retry(function() {
-      html <- impersonate_fetch(page_url)
+      html <- impersonate_fetch(page_url, cookie_jar = cookie_jar)
+
+      # A bot challenge is transient: raise a tagged error so we retry, and
+      # so the outer handler can classify the final outcome as "challenge".
+      if (is_bot_challenge(html)) {
+        stop(BOT_CHALLENGE_TAG)
+      }
+
       page <- rvest::read_html(html)
 
       # Extract date from "samples collected through MM/DD/YYYY"
@@ -45,7 +57,7 @@ check_for_updates <- function() {
       }
 
       list(sample_date_raw = date_match[2], pdf_url = pdf_links[1])
-    }, max_attempts = 3, delay = 30)
+    }, max_attempts = 5)
 
     # Parse the date (MM/DD/YYYY format)
     sample_date <- as.Date(result$sample_date_raw, format = "%m/%d/%Y")
@@ -73,17 +85,26 @@ check_for_updates <- function() {
       pdf_url = pdf_url,
       full_pdf_url = full_pdf_url,
       previous_date = state$last_sample_date,
+      status = "ok",
       error = NULL
     )
 
   }, error = function(e) {
-    message(sprintf("Error checking for updates: %s", e$message))
+    # Distinguish a transient bot challenge from a genuine failure so the
+    # caller can no-op quietly on the former but fail loudly on the latter.
+    is_challenge <- grepl(BOT_CHALLENGE_TAG, e$message, fixed = TRUE)
+    if (is_challenge) {
+      message("MWRA served a bot-challenge page on every attempt (transient).")
+    } else {
+      message(sprintf("Error checking for updates: %s", e$message))
+    }
     list(
       is_new = FALSE,
       sample_date = NULL,
       pdf_url = NULL,
       full_pdf_url = NULL,
       previous_date = NULL,
+      status = if (is_challenge) "challenge" else "error",
       error = e$message
     )
   })
