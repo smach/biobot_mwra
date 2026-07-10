@@ -144,7 +144,7 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         }
 
-        #chart {
+        #chartSouth, #chartNorth {
             width: 100%;
             height: 450px;
         }
@@ -226,7 +226,7 @@
                 width: 100%;
             }
 
-            #chart {
+            #chartSouth, #chartNorth {
                 height: 350px;
             }
         }
@@ -241,15 +241,6 @@
         </header>
 
         <div class="controls">
-            <div class="control-group">
-                <label>System</label>
-                <select id="systemSelect">
-                    <option value="South">South</option>
-                    <option value="North">North</option>
-                    <option value="Both">Both</option>
-                </select>
-            </div>
-
             <div class="control-group">
                 <label>Data Type</label>
                 <select id="dataType">
@@ -288,10 +279,14 @@
         </div>
 
         <div class="chart-container">
-            <div id="chart"><div class="loading">Loading data...</div></div>
+            <div id="chartSouth"><div class="loading">Loading data...</div></div>
+            <div class="stats" id="statsSouth"></div>
         </div>
 
-        <div class="stats" id="stats"></div>
+        <div class="chart-container" style="margin-top:16px;">
+            <div id="chartNorth"><div class="loading">Loading data...</div></div>
+            <div class="stats" id="statsNorth"></div>
+        </div>
 
         <footer>
             Data source: <a href="https://www.mwra.com/biobot/biobotdata.htm" target="_blank">MWRA Biobot Data</a>
@@ -301,7 +296,8 @@
     <script>
         let rawData = [];
         let currentPreset = 90;
-        let chart = null;
+        let chartSouth = null;
+        let chartNorth = null;
 
         const colors = {
             North: '#1a5d1a',
@@ -351,13 +347,19 @@
                 document.getElementById('lastUpdated').textContent =
                     `Data through ${maxDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
 
-                // Initialize chart
-                chart = echarts.init(document.getElementById('chart'));
-                window.addEventListener('resize', () => chart.resize());
+                // Initialize charts
+                chartSouth = echarts.init(document.getElementById('chartSouth'));
+                chartNorth = echarts.init(document.getElementById('chartNorth'));
+                window.addEventListener('resize', () => {
+                    chartSouth.resize();
+                    chartNorth.resize();
+                });
 
-                updateChart();
+                updateCharts();
             } catch (error) {
-                document.getElementById('chart').innerHTML =
+                document.getElementById('chartSouth').innerHTML =
+                    `<div class="error">Error loading data: ${error.message}</div>`;
+                document.getElementById('chartNorth').innerHTML =
                     `<div class="error">Error loading data: ${error.message}</div>`;
             }
         }
@@ -397,33 +399,34 @@
         }
 
         function getFilteredData() {
-            const system = document.getElementById('systemSelect').value;
             const startDate = new Date(document.getElementById('startDate').value);
             const endDate = new Date(document.getElementById('endDate').value);
             endDate.setHours(23, 59, 59);
 
             return rawData.filter(d => {
-                const dateOk = d.date >= startDate && d.date <= endDate;
-                const systemOk = system === 'Both' || d.system === system;
-                return dateOk && systemOk;
+                return d.date >= startDate && d.date <= endDate;
             });
         }
 
-        function updateChart() {
+        function updateCharts() {
+            renderChart(chartSouth, 'South', 'statsSouth');
+            renderChart(chartNorth, 'North', 'statsNorth');
+        }
+
+        function renderChart(chart, sys, statsElId) {
             const data = getFilteredData();
             const dataType = document.getElementById('dataType').value;
             const showCI = document.getElementById('showCI').checked;
-            const system = document.getElementById('systemSelect').value;
 
             if (data.length === 0) {
                 chart.clear();
+                document.getElementById(statsElId).innerHTML = '';
                 return;
             }
 
-            const systems = system === 'Both' ? ['North', 'South'] : [system];
             const series = [];
 
-            systems.forEach(sys => {
+            {
                 const sysData = data.filter(d => d.system === sys);
                 const validData = sysData.filter(d => {
                     const val = dataType === 'daily' ? d.copies_per_ml : d.seven_day_avg;
@@ -527,11 +530,11 @@
                         z: 100
                     });
                 }
-            });
+            }
 
             const option = {
                 title: {
-                    text: dataType === 'daily' ? 'Daily Viral Copies per mL' : '7-Day Average',
+                    text: sys + ' — ' + (dataType === 'daily' ? 'Daily Viral Copies per mL' : '7-Day Average'),
                     left: 'center',
                     textStyle: { fontSize: 14 }
                 },
@@ -545,7 +548,7 @@
                     }
                 },
                 legend: {
-                    data: systems,
+                    data: [sys],
                     bottom: 0
                 },
                 grid: {
@@ -586,63 +589,60 @@
             };
 
             chart.setOption(option, true);
-            updateStats(data, systems, dataType);
+            updateStats(data, sys, statsElId, dataType);
         }
 
-        function updateStats(data, systems, dataType) {
-            const statsContainer = document.getElementById('stats');
+        function updateStats(data, sys, statsElId, dataType) {
+            const statsContainer = document.getElementById(statsElId);
             let html = '';
 
-            systems.forEach(sys => {
-                const sysData = data.filter(d => d.system === sys);
-                const values = sysData
-                    .map(d => dataType === 'daily' ? d.copies_per_ml : d.seven_day_avg)
-                    .filter(v => v !== null && !isNaN(v));
+            const sysData = data.filter(d => d.system === sys);
+            const values = sysData
+                .map(d => dataType === 'daily' ? d.copies_per_ml : d.seven_day_avg)
+                .filter(v => v !== null && !isNaN(v));
 
-                if (values.length > 0) {
-                    const latest = values[values.length - 1];
-                    const max = Math.max(...values);
-                    const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+            if (values.length > 0) {
+                const latest = values[values.length - 1];
+                const max = Math.max(...values);
+                const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 
-                    html += `
-                        <div class="stat-box ${sys.toLowerCase()}">
-                            <div class="stat-value">${latest.toLocaleString()}</div>
-                            <div class="stat-label">${sys} Latest</div>
-                        </div>
-                        <div class="stat-box ${sys.toLowerCase()}">
-                            <div class="stat-value">${max.toLocaleString()}</div>
-                            <div class="stat-label">${sys} Max</div>
-                        </div>
-                        <div class="stat-box ${sys.toLowerCase()}">
-                            <div class="stat-value">${avg.toLocaleString()}</div>
-                            <div class="stat-label">${sys} Avg</div>
-                        </div>
-                    `;
-                }
-            });
+                html = `
+                    <div class="stat-box ${sys.toLowerCase()}">
+                        <div class="stat-value">${latest.toLocaleString()}</div>
+                        <div class="stat-label">${sys} Latest</div>
+                    </div>
+                    <div class="stat-box ${sys.toLowerCase()}">
+                        <div class="stat-value">${max.toLocaleString()}</div>
+                        <div class="stat-label">${sys} Max</div>
+                    </div>
+                    <div class="stat-box ${sys.toLowerCase()}">
+                        <div class="stat-value">${avg.toLocaleString()}</div>
+                        <div class="stat-label">${sys} Avg</div>
+                    </div>
+                `;
+            }
 
             statsContainer.innerHTML = html;
         }
 
         // Event listeners
-        document.getElementById('systemSelect').addEventListener('change', updateChart);
-        document.getElementById('dataType').addEventListener('change', updateChart);
+        document.getElementById('dataType').addEventListener('change', updateCharts);
         document.getElementById('startDate').addEventListener('change', () => {
             currentPreset = null;
             updatePresetButtons();
-            updateChart();
+            updateCharts();
         });
         document.getElementById('endDate').addEventListener('change', () => {
             currentPreset = null;
             updatePresetButtons();
-            updateChart();
+            updateCharts();
         });
-        document.getElementById('showCI').addEventListener('change', updateChart);
+        document.getElementById('showCI').addEventListener('change', updateCharts);
 
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 setDateRange(parseInt(btn.dataset.days));
-                updateChart();
+                updateCharts();
             });
         });
 
