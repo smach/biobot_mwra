@@ -129,11 +129,11 @@ Package Manager snapshot, with `curl-impersonate` baked in) and is built and
 pushed to the GitHub Container Registry by `.github/workflows/build-image.yml`,
 which only runs when the `Dockerfile` changes.
 
-> **First-time / after editing the Dockerfile:** the image must exist before
-> `check-data.yml` can run. On a merge that changes the `Dockerfile`, the
-> scheduled check may fire before the image finishes building and fail to pull
-> it — this self-heals on the next run. To avoid the blip, run the **Build
-> container image** workflow (Actions → *Run workflow*) first.
+> **After editing the Dockerfile:** a push that changes both the `Dockerfile`
+> and pipeline files starts the data check and the image build at the same
+> time, so the data check can fail to pull the not-yet-built image ("manifest
+> unknown"). That red X can be ignored: `check-data.yml` re-runs automatically
+> as soon as the image build completes successfully.
 
 ### Handling MWRA's bot wall
 

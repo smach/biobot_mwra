@@ -17,9 +17,21 @@ on:
       - 'run_monitor.R'
       - 'docs/**'
 
+  # Re-run after each container-image build. A push that changes both the
+  # Dockerfile and pipeline files makes the push-triggered run race the image
+  # build (and fail with "manifest unknown"); this trigger fires a fresh run
+  # as soon as the new image is actually available.
+  workflow_run:
+    workflows: ["Build container image"]
+    types: [completed]
+    branches: [main]
+
 jobs:
   check-data:
     runs-on: ubuntu-latest
+
+    # For workflow_run triggers, only proceed when the image build succeeded.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
 
     # Run inside the pinned image built by build-image.yml. R, all packages,
     # and curl-impersonate are baked in, so there is no per-run package install
