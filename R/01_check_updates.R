@@ -17,10 +17,6 @@ check_for_updates <- function() {
   base_url <- "https://www.mwra.com"
   page_url <- paste0(base_url, "/biobot/biobotdata.htm")
 
-  # Distinctive tag so the outer handler can tell a transient bot challenge
-  # apart from a genuine failure (e.g. the site structure actually changed).
-  challenge_tag <- "__BOT_CHALLENGE__"
-
   # Reuse one cookie jar across retries so any Imperva cookie is replayed.
   cookie_jar <- tempfile(fileext = ".cookies")
   on.exit(unlink(cookie_jar), add = TRUE)
@@ -35,7 +31,7 @@ check_for_updates <- function() {
       # A bot challenge is transient: raise a tagged error so we retry, and
       # so the outer handler can classify the final outcome as "challenge".
       if (is_bot_challenge(html)) {
-        stop(challenge_tag)
+        stop(BOT_CHALLENGE_TAG)
       }
 
       page <- rvest::read_html(html)
@@ -96,7 +92,7 @@ check_for_updates <- function() {
   }, error = function(e) {
     # Distinguish a transient bot challenge from a genuine failure so the
     # caller can no-op quietly on the former but fail loudly on the latter.
-    is_challenge <- grepl(challenge_tag, e$message, fixed = TRUE)
+    is_challenge <- grepl(BOT_CHALLENGE_TAG, e$message, fixed = TRUE)
     if (is_challenge) {
       message("MWRA served a bot-challenge page on every attempt (transient).")
     } else {

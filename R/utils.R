@@ -42,32 +42,27 @@ update_state <- function(sample_date, pdf_url) {
 }
 
 #' Log a check without download (just update check time)
-#'
-#' A successful check (even with no new data) means the bot wall was cleared,
-#' so the consecutive-challenge counter is reset here.
 log_check <- function() {
   state <- load_state()
   state$last_check_time <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
-  state$consecutive_challenges <- 0
   save_state(state)
 }
 
-#' Record a consecutive bot-challenge occurrence
+#' Days since the most recent successfully processed sample date
 #'
-#' Increments the persistent consecutive-challenge counter in state and returns
-#' the new count. A transient challenge is tolerated as a no-op, but a counter
-#' that keeps climbing across runs signals the bypass is genuinely broken and
-#' lets the caller escalate to a hard failure.
+#' Used to decide whether a bot challenge can be tolerated as a transient
+#' no-op: `last_sample_date` only advances on successful data runs and (unlike
+#' any per-run counter) is committed to the repo, so it survives across fresh
+#' CI checkouts. If the newest data is old AND we're being challenged, the
+#' pipeline hasn't truly succeeded in a while and should fail loudly.
 #'
-#' @return The new consecutive-challenge count (integer)
-record_challenge <- function() {
-  state <- load_state()
-  prev <- state$consecutive_challenges
-  count <- if (is.null(prev)) 1L else as.integer(prev) + 1L
-  state$consecutive_challenges <- count
-  state$last_check_time <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
-  save_state(state)
-  count
+#' @param state State list (defaults to the persisted state)
+#' @return Numeric days since last_sample_date, or NA if never recorded
+data_staleness_days <- function(state = load_state()) {
+  if (is.null(state$last_sample_date)) {
+    return(NA_real_)
+  }
+  as.numeric(Sys.Date() - as.Date(state$last_sample_date))
 }
 
 #' Retry wrapper for network operations
@@ -109,6 +104,11 @@ with_retry <- function(fn, max_attempts = 5, delay = 15,
     if (!is.null(result)) return(result)
   }
 }
+
+# Marker embedded in errors raised when a fetch returns a bot-challenge page,
+# so callers can tell a transient challenge apart from a genuine failure after
+# with_retry() wraps and re-raises the message.
+BOT_CHALLENGE_TAG <- "__BOT_CHALLENGE__"
 
 #' Detect an Imperva/Incapsula bot-challenge response
 #'

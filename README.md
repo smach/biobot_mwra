@@ -119,6 +119,33 @@ The workflow runs on a cron job and:
 4. Deploys dashboard to GitHub Pages
 5. Creates a GitHub Issue notification
 
+### Container-based runtime
+
+To keep runs reproducible, `check-data.yml` runs inside a prebuilt container
+image rather than installing R packages fresh on every run (fresh installs
+occasionally produced an `rlang.so: undefined symbol: SETLENGTH` crash). The
+image is defined by the `Dockerfile` (pinned R + packages from a dated Posit
+Package Manager snapshot, with `curl-impersonate` baked in) and is built and
+pushed to the GitHub Container Registry by `.github/workflows/build-image.yml`,
+which only runs when the `Dockerfile` changes.
+
+> **First-time / after editing the Dockerfile:** the image must exist before
+> `check-data.yml` can run. On a merge that changes the `Dockerfile`, the
+> scheduled check may fire before the image finishes building and fail to pull
+> it — this self-heals on the next run. To avoid the blip, run the **Build
+> container image** workflow (Actions → *Run workflow*) first.
+
+### Handling MWRA's bot wall
+
+The MWRA site sits behind an Imperva bot challenge that intermittently serves a
+"please wait while we verify your request" page instead of the data.
+`curl-impersonate` clears it most of the time; when it doesn't, the pipeline
+treats it as a **transient no-op** and exits cleanly (green) so it doesn't raise
+a false alarm — the next run almost always recovers. As a safety net, if the
+newest processed data is more than 14 days old *and* a challenge is still
+happening, the run fails loudly instead (either the bypass has genuinely broken
+or MWRA has stopped publishing — both deserve a look).
+
 ### Setup
 
 1. Push to GitHub
@@ -131,7 +158,9 @@ The workflow runs on a cron job and:
 ```
 biobot_mwra/
 ├── .github/workflows/
-│   └── check-data.yml
+│   ├── check-data.yml
+│   └── build-image.yml
+├── Dockerfile
 ├── R/
 │   ├── utils.R
 │   ├── 01_check_updates.R
