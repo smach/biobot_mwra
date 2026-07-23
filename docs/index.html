@@ -438,12 +438,15 @@
                     const val = dataType === 'daily' ? d.copies_per_ml : d.seven_day_avg;
                     const lowerBound = d.lower_ci ? Math.round(val - d.lower_ci) : null;
                     const upperBound = d.upper_ci ? Math.round(val + d.upper_ci) : null;
+                    const dateLabel = d.date.toLocaleDateString('en-US',
+                        { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                    const valueLine = d.lower_ci && d.upper_ci && dataType === 'daily'
+                        ? `${sys}: ${Math.round(val)} (likely between ${lowerBound} and ${upperBound})`
+                        : `${sys}: ${Math.round(val)}`;
                     return {
                         value: [formatDate(d.date), val],
                         itemStyle: { color: colors[sys] },
-                        tooltip: d.lower_ci && d.upper_ci && dataType === 'daily'
-                            ? `${sys}: ${Math.round(val)} (likely between ${lowerBound} and ${upperBound})`
-                            : `${sys}: ${Math.round(val)}`
+                        tooltip: `<strong>${dateLabel}</strong><br>${valueLine}`
                     };
                 });
 
@@ -542,7 +545,7 @@
                     trigger: 'item',
                     formatter: function(params) {
                         if (params.data && params.data.tooltip) {
-                            return params.data.tooltip + '<br>' + params.data.value[0];
+                            return params.data.tooltip;
                         }
                         return '';
                     }
