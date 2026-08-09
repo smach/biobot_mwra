@@ -457,7 +457,7 @@
                 setDateRange(90);
 
                 document.getElementById('lastUpdated').textContent =
-                    `Data through ${maxDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+                    `Data through ${formatDateLong(maxDate)}`;
 
                 // Initialize charts
                 chartSouth = echarts.init(document.getElementById('chartSouth'));
@@ -480,9 +480,26 @@
             return date.toISOString().split('T')[0];
         }
 
+        // The CSVs hold plain calendar dates, and `new Date('2026-07-20')`
+        // parses those as UTC midnight. So every formatter below has to read
+        // them back in UTC — local getters show the previous day for anyone
+        // west of Greenwich, which had July 20 samples labelled July 19.
         function formatDateShort(date) {
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            return `${months[date.getMonth()]} ${date.getDate()}`;
+            return `${months[date.getUTCMonth()]} ${date.getUTCDate()}`;
+        }
+
+        function formatDateLong(date) {
+            return date.toLocaleDateString('en-US', {
+                month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC'
+            });
+        }
+
+        function formatDateFull(date) {
+            return date.toLocaleDateString('en-US', {
+                weekday: 'short', month: 'short', day: 'numeric',
+                year: 'numeric', timeZone: 'UTC'
+            });
         }
 
         function setDateRange(days) {
@@ -550,8 +567,7 @@
                     const val = dataType === 'daily' ? d.copies_per_ml : d.seven_day_avg;
                     const lowerBound = d.lower_ci ? Math.round(val - d.lower_ci) : null;
                     const upperBound = d.upper_ci ? Math.round(val + d.upper_ci) : null;
-                    const dateLabel = d.date.toLocaleDateString('en-US',
-                        { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                    const dateLabel = formatDateFull(d.date);
                     const valueLine = d.lower_ci && d.upper_ci && dataType === 'daily'
                         ? `${sys}: ${Math.round(val)} (likely between ${lowerBound} and ${upperBound})`
                         : `${sys}: ${Math.round(val)}`;
@@ -804,10 +820,8 @@
             badge.textContent = summary.level;
             badge.className = 'level-badge ' + summary.level;
 
-            const sampled = new Date(summary.latest_date + 'T00:00:00')
-                .toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
             document.getElementById('wwscanHeadline').textContent =
-                `${summary.headline}. Latest sample ${sampled}.`;
+                `${summary.headline}. Latest sample ${formatDateLong(new Date(summary.latest_date))}.`;
             document.getElementById('wwscanChange').textContent = summary.change_text;
             document.getElementById('wwscanStatus').style.display = 'flex';
         }
@@ -872,9 +886,7 @@
                     trigger: 'axis',
                     formatter: function(params) {
                         if (!params.length) return '';
-                        const d = new Date(params[0].axisValue + 'T00:00:00');
-                        const label = d.toLocaleDateString('en-US',
-                            { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                        const label = formatDateFull(new Date(params[0].axisValue));
                         const lines = params.map(p =>
                             `${p.seriesName}: ${Math.round(p.value[1]).toLocaleString()}`);
                         return `<strong>${label}</strong><br>${lines.join('<br>')}`;
@@ -885,7 +897,7 @@
                 xAxis: {
                     type: 'category',
                     axisLabel: {
-                        formatter: value => formatDateShort(new Date(value + 'T00:00:00')),
+                        formatter: value => formatDateShort(new Date(value)),
                         rotate: 45
                     }
                 },
