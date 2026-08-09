@@ -1,0 +1,146 @@
+name: Check WastewaterSCAN Data
+
+on:
+  # Once daily at 12:20 UTC, deliberately offset from the MWRA checks so the
+  # two workflows never race each other pushing to main.
+  schedule:
+    - cron: '20 12 * * *'
+
+  workflow_dispatch:
+
+  push:
+    branches: [main]
+    paths:
+      - 'R/05_wwscan.R'
+      - 'run_wwscan.R'
+      - '.github/workflows/check-wwscan.yml'
+
+jobs:
+  check-wwscan:
+    runs-on: ubuntu-latest
+
+    outputs:
+      data_updated: ${{ steps.check.outputs.data_updated }}
+
+    # Same prebuilt image as the MWRA workflow: R, packages, and
+    # curl-impersonate are all baked in, so nothing installs at run time.
+    container:
+      image: ghcr.io/${{ github.repository }}:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    permissions:
+      contents: write
+      issues: write
+      packages: read
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Run WastewaterSCAN check
+        id: check
+        run: Rscript run_wwscan.R
+
+      - name: Commit and push changes
+        if: steps.check.outputs.data_updated == 'true'
+        run: |
+          # Running as root inside the container, the checkout is owned by a
+          # different uid, so mark the workspace safe before touching git.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ state/ docs/
+          git diff --staged --quiet || git commit -m "Update WastewaterSCAN data (${{ steps.check.outputs.sample_date }})"
+          # The MWRA workflow commits to the same branch; rebase rather than
+          # fail if it landed something between checkout and push.
+          git pull --rebase origin main
+          git push
+
+      - name: Create notification issue
+        if: steps.check.outputs.data_updated == 'true'
+        uses: actions/github-script@v7
+        # Passed as environment variables rather than interpolated into the
+        # script body, so free text can never terminate a JS string literal.
+        env:
+          SAMPLE_DATE: ${{ steps.check.outputs.sample_date }}
+          HEADLINE: ${{ steps.check.outputs.headline }}
+          LEVEL: ${{ steps.check.outputs.level }}
+          LATEST_VALUE: ${{ steps.check.outputs.latest_value }}
+          CHANGE_TEXT: ${{ steps.check.outputs.change_text }}
+        with:
+          script: |
+            const sampleDate = process.env.SAMPLE_DATE;
+            const headline = process.env.HEADLINE;
+            const level = process.env.LEVEL;
+            const latestValue = process.env.LATEST_VALUE;
+            const changeText = process.env.CHANGE_TEXT;
+            const repoUrl = 'https://github.com/' + context.repo.owner + '/' + context.repo.repo;
+            const pagesUrl = 'https://' + context.repo.owner + '.github.io/' + context.repo.repo;
+
+            const body = '## WastewaterSCAN COVID Update — Boston (Deer Island)\n\n' +
+              '**' + headline + '**\n\n' +
+              '- **Sample collection date:** ' + sampleDate + '\n' +
+              '- **Current level:** ' + level + ' (national tertile)\n' +
+              '- **Latest value:** ' + latestValue + ' (PMMoV-normalized, ×1 million)\n\n' +
+              changeText + '\n\n' +
+              '### Links\n\n' +
+              '- [Interactive dashboard](' + pagesUrl + ')\n' +
+              '- [WastewaterSCAN CSV](' + repoUrl + '/blob/main/data/processed/wwscan_covid.csv)\n' +
+              '- [WastewaterSCAN dashboard for Boston](https://data.wastewaterscan.org/?plantId=b50c6424-02d1-482f-b928-dbed1d7eab25)\n\n' +
+              '---\n' +
+              '*Data from [WastewaterSCAN](https://www.wastewaterscan.org/) (Stanford/Emory/Verily). ' +
+              'These numbers are not comparable to the MWRA Biobot series — different lab method and units.*';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'WastewaterSCAN Boston COVID — ' + sampleDate + ' (' + level + ')',
+              body: body,
+              labels: ['data-update', 'automated', 'wastewaterscan']
+            });
+
+  # Republish docs/ so the dashboard picks up the new CSV. Pushes made with
+  # GITHUB_TOKEN don't trigger other workflows, so this can't rely on
+  # check-data.yml's deploy job firing. Only runs when there was actually new
+  # data -- most daily runs find nothing and have nothing to redeploy.
+  deploy-pages:
+    needs: check-wwscan
+    if: needs.check-wwscan.result == 'success' && needs.check-wwscan.outputs.data_updated == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    # Shared with check-data.yml so the two workflows never deploy at once.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: main  # Includes any commit from check-wwscan
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'docs'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

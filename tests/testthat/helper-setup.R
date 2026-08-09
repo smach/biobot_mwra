@@ -31,6 +31,7 @@ source(file.path(PROJECT_ROOT, "R", "01_check_updates.R"))
 source(file.path(PROJECT_ROOT, "R", "02_download_pdf.R"))
 source(file.path(PROJECT_ROOT, "R", "03_extract_data.R"))
 source(file.path(PROJECT_ROOT, "R", "04_visualize.R"))
+source(file.path(PROJECT_ROOT, "R", "05_wwscan.R"))
 
 # Helper function to get test fixtures path
 test_fixture_path <- function(...) {

@@ -21,6 +21,7 @@ source("R/01_check_updates.R")
 source("R/02_download_pdf.R")
 source("R/03_extract_data.R")
 source("R/04_visualize.R")
+source("R/05_wwscan.R")
 
 # Run tests
 message("\nRunning tests...\n")

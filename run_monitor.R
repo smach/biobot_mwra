@@ -83,6 +83,20 @@ if (identical(update_info$status, "challenge")) {
     message("No new data available. Exiting.")
     log_check()
     set_gha_output("data_updated", "false")
+
+    # A long publishing pause used to be invisible: the page loads, nothing is
+    # new, the run exits cleanly, and nobody hears about it. That is exactly
+    # what happened in July 2026, when MWRA stopped posting for weeks without
+    # any signal from this pipeline. Flag it so the workflow can open a single
+    # issue -- not a hard failure, because the pipeline itself is healthy.
+    stale_days <- data_staleness_days()
+    if (!is.na(stale_days) && stale_days > MAX_STALE_DAYS) {
+      message(sprintf(
+        "WARNING: MWRA's newest published data is %.0f days old (limit %d). They appear to have paused publishing.",
+        stale_days, MAX_STALE_DAYS))
+      set_gha_output("data_stale", "true")
+      set_gha_output("stale_days", sprintf("%.0f", stale_days))
+    }
   } else {
     # Continue with update
     message("")

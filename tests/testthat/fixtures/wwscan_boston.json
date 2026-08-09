@@ -1,0 +1,1116 @@
+{
+ "samples": [
+  {
+   "sample_id": "146-260529",
+   "collection_date": "2026-05-29",
+   "dilution": 1.0,
+   "bcov_recovery": 0.77,
+   "bcov_recovery_lci": 0.668,
+   "bcov_recovery_uci": 0.876,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 2712.5396632308148,
+     "gc_g_dry_weight_lci": 0.0,
+     "gc_g_dry_weight_uci": 5887.574252278292,
+     "gc_g_dry_weight_pmmov": 1.366096812561087e-05,
+     "gc_g_dry_weight_pmmov_lci": -3.5644024934744525e-06,
+     "gc_g_dry_weight_pmmov_uci": 3.0886338744696195e-05,
+     "gc_g_dry_weight_trimmed5": 4805.575943153882,
+     "gc_g_dry_weight_trimmed5_pmmov": 1.9988431197556908e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 198561305.34010154,
+     "gc_g_dry_weight_lci": 181235913.3671743,
+     "gc_g_dry_weight_uci": 216514460.9137056,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 197756282.4490552,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260601",
+   "collection_date": "2026-06-01",
+   "dilution": 1.0,
+   "bcov_recovery": 1.871,
+   "bcov_recovery_lci": 1.735,
+   "bcov_recovery_uci": 2.009,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 7056.9998921837705,
+     "gc_g_dry_weight_lci": 4951.604807941605,
+     "gc_g_dry_weight_uci": 9688.615841305282,
+     "gc_g_dry_weight_pmmov": 2.108469420318646e-05,
+     "gc_g_dry_weight_pmmov_lci": 1.2379058311862506e-05,
+     "gc_g_dry_weight_pmmov_uci": 2.9790330094510412e-05,
+     "gc_g_dry_weight_trimmed5": 4805.575943153882,
+     "gc_g_dry_weight_trimmed5_pmmov": 1.9988431197556908e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 334697758.676399,
+     "gc_g_dry_weight_lci": 321478078.44282234,
+     "gc_g_dry_weight_uci": 348079070.67639905,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 202450195.4325591,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260603",
+   "collection_date": "2026-06-03",
+   "dilution": 1.0,
+   "bcov_recovery": 2.793,
+   "bcov_recovery_lci": 2.557,
+   "bcov_recovery_uci": 2.999,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 2327.3468871135433,
+     "gc_g_dry_weight_lci": 1183.7497008700411,
+     "gc_g_dry_weight_uci": 3717.3900821887833,
+     "gc_g_dry_weight_pmmov": 1.3402490394581303e-05,
+     "gc_g_dry_weight_pmmov_lci": 4.928836373545368e-06,
+     "gc_g_dry_weight_pmmov_uci": 2.187614441561724e-05,
+     "gc_g_dry_weight_trimmed5": 4400.28230268269,
+     "gc_g_dry_weight_trimmed5_pmmov": 2.649382240439818e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 173650330.5426357,
+     "gc_g_dry_weight_lci": 167581176.74418604,
+     "gc_g_dry_weight_uci": 179724546.91472867,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 198910744.14677104,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260605",
+   "collection_date": "2026-06-05",
+   "dilution": 1.0,
+   "bcov_recovery": 0.347,
+   "bcov_recovery_lci": 0.281,
+   "bcov_recovery_uci": 0.41,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 11055.15337233797,
+     "gc_g_dry_weight_lci": 6778.956300971124,
+     "gc_g_dry_weight_uci": 16837.21065569198,
+     "gc_g_dry_weight_pmmov": 4.9238927482998205e-05,
+     "gc_g_dry_weight_pmmov_lci": 2.0845836212643577e-05,
+     "gc_g_dry_weight_pmmov_uci": 7.763201875335283e-05,
+     "gc_g_dry_weight_trimmed5": 7181.153539051742,
+     "gc_g_dry_weight_trimmed5_pmmov": 3.37865489667008e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 224520596.5575758,
+     "gc_g_dry_weight_lci": 212488162.90909094,
+     "gc_g_dry_weight_uci": 236559374.35151517,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 244289561.92553684,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260608",
+   "collection_date": "2026-06-08",
+   "dilution": 1.0,
+   "bcov_recovery": 0.806,
+   "bcov_recovery_lci": 0.666,
+   "bcov_recovery_uci": 0.936,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 3431.3073526334847,
+     "gc_g_dry_weight_lci": 1783.1239699004525,
+     "gc_g_dry_weight_uci": 5874.458272506787,
+     "gc_g_dry_weight_pmmov": 4.473580488439721e-05,
+     "gc_g_dry_weight_pmmov_lci": 2.7097528103841976e-07,
+     "gc_g_dry_weight_pmmov_uci": 8.9200634487756e-05,
+     "gc_g_dry_weight_trimmed5": 6796.78055514834,
+     "gc_g_dry_weight_trimmed5_pmmov": 3.419486198123736e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 76701589.73333335,
+     "gc_g_dry_weight_lci": 55077474.543589756,
+     "gc_g_dry_weight_uci": 96827619.50769232,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 220934877.9222927,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260610",
+   "collection_date": "2026-06-10",
+   "dilution": 1.0,
+   "bcov_recovery": 0.813,
+   "bcov_recovery_lci": 0.655,
+   "bcov_recovery_uci": 0.956,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 5,
+     "gc_g_dry_weight": 13168.101404487572,
+     "gc_g_dry_weight_lci": 9421.64045708187,
+     "gc_g_dry_weight_uci": 17797.009416033965,
+     "gc_g_dry_weight_pmmov": 3.553914781251872e-05,
+     "gc_g_dry_weight_pmmov_lci": 1.6490568108098396e-05,
+     "gc_g_dry_weight_pmmov_uci": 5.458772751693905e-05,
+     "gc_g_dry_weight_trimmed5": 6796.78055514834,
+     "gc_g_dry_weight_trimmed5_pmmov": 3.419486198123736e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 370523836.81099653,
+     "gc_g_dry_weight_lci": 302175410.47422683,
+     "gc_g_dry_weight_uci": 432711320.0824742,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 250048222.34250703,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260612",
+   "collection_date": "2026-06-12",
+   "dilution": 1.0,
+   "bcov_recovery": 0.603,
+   "bcov_recovery_lci": 0.338,
+   "bcov_recovery_uci": 0.853,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 5903.880940473567,
+     "gc_g_dry_weight_lci": 4047.0632262695462,
+     "gc_g_dry_weight_uci": 8257.438081072227,
+     "gc_g_dry_weight_pmmov": 2.230963324679615e-05,
+     "gc_g_dry_weight_pmmov_lci": 4.100620413772668e-06,
+     "gc_g_dry_weight_pmmov_uci": 4.051864607981963e-05,
+     "gc_g_dry_weight_trimmed5": 4240.016027468985,
+     "gc_g_dry_weight_trimmed5_pmmov": 2.360602378086027e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 264633706.6666667,
+     "gc_g_dry_weight_lci": 154136084.7257384,
+     "gc_g_dry_weight_uci": 370386437.535865,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 219594571.4785858,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260615",
+   "collection_date": "2026-06-15",
+   "dilution": 1.0,
+   "bcov_recovery": 0.823,
+   "bcov_recovery_lci": 0.62,
+   "bcov_recovery_uci": 1.014,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 3384.8597892999037,
+     "gc_g_dry_weight_lci": 1943.7422227965283,
+     "gc_g_dry_weight_uci": 5406.520784848602,
+     "gc_g_dry_weight_pmmov": 1.2969290283265936e-05,
+     "gc_g_dry_weight_pmmov_lci": 2.276603143678466e-06,
+     "gc_g_dry_weight_pmmov_uci": 2.3661977422853405e-05,
+     "gc_g_dry_weight_trimmed5": 3962.9252577005627,
+     "gc_g_dry_weight_trimmed5_pmmov": 1.4040476919797809e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 260990363.80327865,
+     "gc_g_dry_weight_lci": 201694342.64480877,
+     "gc_g_dry_weight_uci": 317064395.715847,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 298715969.0936473,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260617",
+   "collection_date": "2026-06-17",
+   "dilution": 1.0,
+   "bcov_recovery": 1.686,
+   "bcov_recovery_lci": 1.554,
+   "bcov_recovery_uci": 1.818,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 0.0,
+     "gc_g_dry_weight_lci": 0.0,
+     "gc_g_dry_weight_uci": 0.0,
+     "gc_g_dry_weight_pmmov": 0.0,
+     "gc_g_dry_weight_pmmov_lci": 0,
+     "gc_g_dry_weight_pmmov_uci": 0,
+     "gc_g_dry_weight_trimmed5": 3962.9252577005627,
+     "gc_g_dry_weight_trimmed5_pmmov": 1.4040476919797809e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 133159643.96581198,
+     "gc_g_dry_weight_lci": 127926231.45299147,
+     "gc_g_dry_weight_uci": 138396460.37606838,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 281168254.55101466,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260619",
+   "collection_date": "2026-06-19",
+   "dilution": 1.0,
+   "bcov_recovery": 1.131,
+   "bcov_recovery_lci": 0.978,
+   "bcov_recovery_uci": 1.27,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 2600.035043328218,
+     "gc_g_dry_weight_lci": 878.0737835839726,
+     "gc_g_dry_weight_uci": 4625.219020371696,
+     "gc_g_dry_weight_pmmov": 6.842507229331341e-06,
+     "gc_g_dry_weight_pmmov_lci": 5.699419333249597e-07,
+     "gc_g_dry_weight_pmmov_uci": 1.311507252533772e-05,
+     "gc_g_dry_weight_trimmed5": 1994.964944209374,
+     "gc_g_dry_weight_trimmed5_pmmov": 6.603932504199092e-06,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 379982798.1449275,
+     "gc_g_dry_weight_lci": 327621445.25603867,
+     "gc_g_dry_weight_uci": 427655471.6135266,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 256848537.33765408,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260622",
+   "collection_date": "2026-06-22",
+   "dilution": 1.0,
+   "bcov_recovery": 0.791,
+   "bcov_recovery_lci": 0.713,
+   "bcov_recovery_uci": 0.875,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 1,
+     "gc_g_dry_weight": 13907.211086528589,
+     "gc_g_dry_weight_lci": 7226.841316454021,
+     "gc_g_dry_weight_uci": 23810.481113372,
+     "gc_g_dry_weight_pmmov": 4.374978218170067e-05,
+     "gc_g_dry_weight_pmmov_lci": 1.095379160723762e-05,
+     "gc_g_dry_weight_pmmov_uci": 7.654577275616373e-05,
+     "gc_g_dry_weight_trimmed5": 2242.409156335591,
+     "gc_g_dry_weight_trimmed5_pmmov": 7.473849486465532e-06,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 1,
+     "gc_g_dry_weight": 317880693.1830987,
+     "gc_g_dry_weight_lci": 305966630.685446,
+     "gc_g_dry_weight_uci": 329810859.7934273,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 258158262.50908962,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260624",
+   "collection_date": "2026-06-24",
+   "dilution": 1.0,
+   "bcov_recovery": 0.724,
+   "bcov_recovery_lci": 0.67,
+   "bcov_recovery_uci": 0.778,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 0.0,
+     "gc_g_dry_weight_lci": 0.0,
+     "gc_g_dry_weight_uci": 0.0,
+     "gc_g_dry_weight_pmmov": 0.0,
+     "gc_g_dry_weight_pmmov_lci": 0,
+     "gc_g_dry_weight_pmmov_uci": 0,
+     "gc_g_dry_weight_trimmed5": 2984.2432487764295,
+     "gc_g_dry_weight_trimmed5_pmmov": 1.2001632795565582e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 191674555.02658486,
+     "gc_g_dry_weight_lci": 182037328.55623722,
+     "gc_g_dry_weight_uci": 200561748.0899795,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 258158262.50908962,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260626",
+   "collection_date": "2026-06-26",
+   "dilution": 1.0,
+   "bcov_recovery": 0.718,
+   "bcov_recovery_lci": 0.667,
+   "bcov_recovery_uci": 0.769,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 4127.192425678555,
+     "gc_g_dry_weight_lci": 2530.7740751088472,
+     "gc_g_dry_weight_uci": 6285.782575740622,
+     "gc_g_dry_weight_pmmov": 1.5579041230065255e-05,
+     "gc_g_dry_weight_pmmov_lci": 6.939052216829601e-06,
+     "gc_g_dry_weight_pmmov_uci": 2.421903024330091e-05,
+     "gc_g_dry_weight_trimmed5": 4203.2767903722415,
+     "gc_g_dry_weight_trimmed5_pmmov": 2.4304057779688694e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 264919539.31758532,
+     "gc_g_dry_weight_lci": 256562016.16797903,
+     "gc_g_dry_weight_uci": 273284095.0761155,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 206811517.54767358,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260629",
+   "collection_date": "2026-06-29",
+   "dilution": 1.0,
+   "bcov_recovery": 0.971,
+   "bcov_recovery_lci": 0.902,
+   "bcov_recovery_uci": 1.043,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 2225.5022773225155,
+     "gc_g_dry_weight_lci": 697.4231361817447,
+     "gc_g_dry_weight_uci": 3810.094703448277,
+     "gc_g_dry_weight_pmmov": 1.358334992730015e-05,
+     "gc_g_dry_weight_pmmov_lci": 3.398199402284e-06,
+     "gc_g_dry_weight_pmmov_uci": 2.37685004523163e-05,
+     "gc_g_dry_weight_trimmed5": 4203.2767903722415,
+     "gc_g_dry_weight_trimmed5_pmmov": 2.3115363617392582e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 163840458.2988506,
+     "gc_g_dry_weight_lci": 157649992.16551727,
+     "gc_g_dry_weight_uci": 170035344.2574713,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 186708558.03470072,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260701",
+   "collection_date": "2026-07-01",
+   "dilution": 1.0,
+   "bcov_recovery": 1.021,
+   "bcov_recovery_lci": 0.755,
+   "bcov_recovery_uci": 1.25,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 6257.135668115654,
+     "gc_g_dry_weight_lci": 4168.105678181457,
+     "gc_g_dry_weight_uci": 8949.604898903292,
+     "gc_g_dry_weight_pmmov": 4.701607783169782e-05,
+     "gc_g_dry_weight_pmmov_lci": 1.6303430552585957e-05,
+     "gc_g_dry_weight_pmmov_uci": 7.772872511080968e-05,
+     "gc_g_dry_weight_trimmed5": 6202.113813627089,
+     "gc_g_dry_weight_trimmed5_pmmov": 3.4259606252191805e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 133085020.20338985,
+     "gc_g_dry_weight_lci": 103415934.28248589,
+     "gc_g_dry_weight_uci": 158721406.5536723,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 211123552.79836753,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260703",
+   "collection_date": "2026-07-03",
+   "dilution": 1.0,
+   "bcov_recovery": 1.428,
+   "bcov_recovery_lci": 1.305,
+   "bcov_recovery_uci": 1.551,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 8222.013347087059,
+     "gc_g_dry_weight_lci": 5769.042688045176,
+     "gc_g_dry_weight_uci": 11288.082771275294,
+     "gc_g_dry_weight_pmmov": 4.0183699694812335e-05,
+     "gc_g_dry_weight_pmmov_lci": 2.2629677387036996e-05,
+     "gc_g_dry_weight_pmmov_uci": 5.7737722002587673e-05,
+     "gc_g_dry_weight_trimmed5": 9404.410585592457,
+     "gc_g_dry_weight_trimmed5_pmmov": 5.9391764122693296e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 204610660.77866668,
+     "gc_g_dry_weight_lci": 191528971.34933335,
+     "gc_g_dry_weight_uci": 216242789.71733332,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 173138574.98139465,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260706",
+   "collection_date": "2026-07-06",
+   "dilution": 1.0,
+   "bcov_recovery": 0.952,
+   "bcov_recovery_lci": 0.819,
+   "bcov_recovery_uci": 1.088,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 26121.283602152307,
+     "gc_g_dry_weight_lci": 21216.64617426357,
+     "gc_g_dry_weight_uci": 31045.553494500688,
+     "gc_g_dry_weight_pmmov": 9.544937225861667e-05,
+     "gc_g_dry_weight_pmmov_lci": 6.677839599856092e-05,
+     "gc_g_dry_weight_pmmov_uci": 0.00012412034851867244,
+     "gc_g_dry_weight_trimmed5": 10489.42026449944,
+     "gc_g_dry_weight_trimmed5_pmmov": 6.072901999701877e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 273666373.95348835,
+     "gc_g_dry_weight_lci": 243653290.00516793,
+     "gc_g_dry_weight_uci": 304279589.622739,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 190268228.1833651,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260708",
+   "collection_date": "2026-07-08",
+   "dilution": 1.0,
+   "bcov_recovery": 0.414,
+   "bcov_recovery_lci": 0.282,
+   "bcov_recovery_uci": 0.544,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 13734.08274157466,
+     "gc_g_dry_weight_lci": 10486.253938244345,
+     "gc_g_dry_weight_uci": 17592.797322714927,
+     "gc_g_dry_weight_pmmov": 9.097551484156974e-05,
+     "gc_g_dry_weight_pmmov_lci": 5.0597713630528196e-05,
+     "gc_g_dry_weight_pmmov_uci": 0.0001313533160526113,
+     "gc_g_dry_weight_trimmed5": 10500.816574536713,
+     "gc_g_dry_weight_trimmed5_pmmov": 5.845156061805694e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 150964605.86666667,
+     "gc_g_dry_weight_lci": 126376624.49230768,
+     "gc_g_dry_weight_uci": 175210571.32307693,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 230182176.63345328,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260710",
+   "collection_date": "2026-07-10",
+   "dilution": 1.0,
+   "bcov_recovery": 0.827,
+   "bcov_recovery_lci": 0.758,
+   "bcov_recovery_uci": 0.896,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 9512.164704836601,
+     "gc_g_dry_weight_lci": 6919.577097456582,
+     "gc_g_dry_weight_uci": 12683.377477049487,
+     "gc_g_dry_weight_pmmov": 4.419546731778874e-05,
+     "gc_g_dry_weight_pmmov_lci": 2.3196053365143223e-05,
+     "gc_g_dry_weight_pmmov_uci": 6.519488127043426e-05,
+     "gc_g_dry_weight_trimmed5": 10500.816574536713,
+     "gc_g_dry_weight_trimmed5_pmmov": 5.522323653962597e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 215229417.90476194,
+     "gc_g_dry_weight_lci": 184717717.24867722,
+     "gc_g_dry_weight_uci": 243312532.91005287,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 253200747.69172716,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260713",
+   "collection_date": "2026-07-13",
+   "dilution": 1.0,
+   "bcov_recovery": 1.566,
+   "bcov_recovery_lci": 1.36,
+   "bcov_recovery_uci": 1.771,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 3,
+     "gc_g_dry_weight": 8256.20227719888,
+     "gc_g_dry_weight_lci": 5013.238148138189,
+     "gc_g_dry_weight_uci": 12574.467958169937,
+     "gc_g_dry_weight_pmmov": 3.0498727459519437e-05,
+     "gc_g_dry_weight_pmmov_lci": 1.0160044968747412e-05,
+     "gc_g_dry_weight_pmmov_uci": 5.083740995029146e-05,
+     "gc_g_dry_weight_trimmed5": 8084.715303618075,
+     "gc_g_dry_weight_trimmed5_pmmov": 3.350385367248995e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 270706451.2169312,
+     "gc_g_dry_weight_lci": 231768863.4074074,
+     "gc_g_dry_weight_uci": 309564176.6772487,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 236093828.68762323,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260715",
+   "collection_date": "2026-07-15",
+   "dilution": 1.0,
+   "bcov_recovery": 0.639,
+   "bcov_recovery_lci": 0.588,
+   "bcov_recovery_uci": 0.691,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 6485.778928818748,
+     "gc_g_dry_weight_lci": 4320.409445325681,
+     "gc_g_dry_weight_uci": 9276.644390014348,
+     "gc_g_dry_weight_pmmov": 2.3621938435147597e-05,
+     "gc_g_dry_weight_pmmov_lci": 1.2592584619071255e-05,
+     "gc_g_dry_weight_pmmov_uci": 3.465129225122394e-05,
+     "gc_g_dry_weight_trimmed5": 6827.4531434942255,
+     "gc_g_dry_weight_trimmed5_pmmov": 3.142725245034339e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 274565906.0379404,
+     "gc_g_dry_weight_lci": 264557811.07859078,
+     "gc_g_dry_weight_uci": 284616692.6395664,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 236093828.68762323,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260717",
+   "collection_date": "2026-07-17",
+   "dilution": 1.0,
+   "bcov_recovery": 1.512,
+   "bcov_recovery_lci": 1.411,
+   "bcov_recovery_uci": 1.614,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 5740.378224465052,
+     "gc_g_dry_weight_lci": 3103.746905732872,
+     "gc_g_dry_weight_uci": 8017.395096359861,
+     "gc_g_dry_weight_pmmov": 2.5817366240161686e-05,
+     "gc_g_dry_weight_pmmov_lci": 1.3167231734575112e-05,
+     "gc_g_dry_weight_pmmov_uci": 3.846750074574826e-05,
+     "gc_g_dry_weight_trimmed5": 6827.4531434942255,
+     "gc_g_dry_weight_trimmed5_pmmov": 3.0064189639323036e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 222345616.94117647,
+     "gc_g_dry_weight_lci": 215532059.04313725,
+     "gc_g_dry_weight_uci": 229165469.92941177,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 255872658.06534934,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260720",
+   "collection_date": "2026-07-20",
+   "dilution": 1.0,
+   "bcov_recovery": 1.062,
+   "bcov_recovery_lci": 0.891,
+   "bcov_recovery_uci": 1.233,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 5049.669392000001,
+     "gc_g_dry_weight_lci": 2529.495603764706,
+     "gc_g_dry_weight_uci": 7690.731918117649,
+     "gc_g_dry_weight_pmmov": 3.796566365134903e-05,
+     "gc_g_dry_weight_pmmov_lci": 1.549972135265015e-05,
+     "gc_g_dry_weight_pmmov_uci": 6.0431605950047915e-05,
+     "gc_g_dry_weight_trimmed5": 7414.193028941178,
+     "gc_g_dry_weight_trimmed5_pmmov": 3.25531683699329e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 133006219.47169812,
+     "gc_g_dry_weight_lci": 123875532.77987422,
+     "gc_g_dry_weight_uci": 142147308.88050315,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 245143591.76986706,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260722",
+   "collection_date": "2026-07-22",
+   "dilution": 1.0,
+   "bcov_recovery": 0.988,
+   "bcov_recovery_lci": 0.883,
+   "bcov_recovery_uci": 1.097,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 10016.421933539734,
+     "gc_g_dry_weight_lci": 7286.4016142167175,
+     "gc_g_dry_weight_uci": 13355.735212218784,
+     "gc_g_dry_weight_pmmov": 3.3876475218287985e-05,
+     "gc_g_dry_weight_pmmov_lci": 2.0161565652555488e-05,
+     "gc_g_dry_weight_pmmov_uci": 4.759138478402048e-05,
+     "gc_g_dry_weight_trimmed5": 6935.489850001596,
+     "gc_g_dry_weight_trimmed5_pmmov": 3.25531683699329e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 295674856.0467836,
+     "gc_g_dry_weight_lci": 275370047.90643275,
+     "gc_g_dry_weight_uci": 316805762.61988306,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 197957029.58111966,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260724",
+   "collection_date": "2026-07-24",
+   "dilution": 1.0,
+   "bcov_recovery": 0.657,
+   "bcov_recovery_lci": 0.616,
+   "bcov_recovery_uci": 0.698,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 15517.369490276522,
+     "gc_g_dry_weight_lci": 10431.044036601304,
+     "gc_g_dry_weight_uci": 20420.186277325287,
+     "gc_g_dry_weight_pmmov": 6.505709429600328e-05,
+     "gc_g_dry_weight_pmmov_lci": 4.148288809303816e-05,
+     "gc_g_dry_weight_pmmov_uci": 8.86313004989684e-05,
+     "gc_g_dry_weight_trimmed5": 7029.815498557985,
+     "gc_g_dry_weight_trimmed5_pmmov": 4.5633077721880095e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 238519252.33048436,
+     "gc_g_dry_weight_lci": 230277819.53276354,
+     "gc_g_dry_weight_uci": 246767032.06837612,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 154307529.34877133,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260727",
+   "collection_date": "2026-07-27",
+   "dilution": 1.0,
+   "bcov_recovery": 1.649,
+   "bcov_recovery_lci": 1.527,
+   "bcov_recovery_uci": 1.771,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 0.0,
+     "gc_g_dry_weight_lci": 0.0,
+     "gc_g_dry_weight_uci": 0.0,
+     "gc_g_dry_weight_pmmov": 0.0,
+     "gc_g_dry_weight_pmmov_lci": 0,
+     "gc_g_dry_weight_pmmov_uci": 0,
+     "gc_g_dry_weight_trimmed5": 9487.327147943712,
+     "gc_g_dry_weight_trimmed5_pmmov": 5.478356941576275e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 90826933.40689656,
+     "gc_g_dry_weight_lci": 83669947.47586207,
+     "gc_g_dry_weight_uci": 97986287.08045977,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 173269522.59549725,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260729",
+   "collection_date": "2026-07-29",
+   "dilution": 1.0,
+   "bcov_recovery": 2.433,
+   "bcov_recovery_lci": 2.255,
+   "bcov_recovery_uci": 2.611,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 6023.3551701342185,
+     "gc_g_dry_weight_lci": 4012.3694525269275,
+     "gc_g_dry_weight_uci": 8615.245510654517,
+     "gc_g_dry_weight_pmmov": 6.590312055410143e-05,
+     "gc_g_dry_weight_pmmov_lci": 3.41358685362854e-05,
+     "gc_g_dry_weight_pmmov_uci": 9.767037257191747e-05,
+     "gc_g_dry_weight_trimmed5": 8974.066055718047,
+     "gc_g_dry_weight_trimmed5_pmmov": 6.545911786103389e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 91397116.24413148,
+     "gc_g_dry_weight_lci": 86672321.72769955,
+     "gc_g_dry_weight_uci": 96124432.37558688,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 124038749.62096797,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260731",
+   "collection_date": "2026-07-31",
+   "dilution": 1.0,
+   "bcov_recovery": 0.759,
+   "bcov_recovery_lci": 0.582,
+   "bcov_recovery_uci": 0.936,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 12422.204340157181,
+     "gc_g_dry_weight_lci": 9812.289621262207,
+     "gc_g_dry_weight_uci": 14893.325665120266,
+     "gc_g_dry_weight_pmmov": 6.541713873299697e-05,
+     "gc_g_dry_weight_pmmov_lci": 4.192344975420772e-05,
+     "gc_g_dry_weight_pmmov_uci": 8.891082771178622e-05,
+     "gc_g_dry_weight_trimmed5": 4833.331275665655,
+     "gc_g_dry_weight_trimmed5_pmmov": 4.377341976236613e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 189892199.21187586,
+     "gc_g_dry_weight_lci": 161640137.3711201,
+     "gc_g_dry_weight_uci": 218192940.95546558,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 102822847.52677365,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260803",
+   "collection_date": "2026-08-03",
+   "dilution": 1.0,
+   "bcov_recovery": 0.592,
+   "bcov_recovery_lci": 0.53,
+   "bcov_recovery_uci": 0.641,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 8476.638656862746,
+     "gc_g_dry_weight_lci": 5695.0618531241835,
+     "gc_g_dry_weight_uci": 11637.694849542486,
+     "gc_g_dry_weight_pmmov": 0.0001677144828806334,
+     "gc_g_dry_weight_pmmov_lci": 9.315861487561899e-05,
+     "gc_g_dry_weight_pmmov_uci": 0.0002422703508856478,
+     "gc_g_dry_weight_trimmed5": 7249.996913498482,
+     "gc_g_dry_weight_trimmed5_pmmov": 6.56601296435492e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 50542079.08148149,
+     "gc_g_dry_weight_lci": 46923436.05925926,
+     "gc_g_dry_weight_uci": 54162233.84444444,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 108820804.58671221,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  },
+  {
+   "sample_id": "146-260805",
+   "collection_date": "2026-08-05",
+   "dilution": 1.0,
+   "bcov_recovery": 0.935,
+   "bcov_recovery_lci": 0.756,
+   "bcov_recovery_uci": 1.11,
+   "pmmov_gcl": null,
+   "bcov_ratio": null,
+   "targets": {
+    "N Gene": {
+     "num_wells": 6,
+     "gc_g_dry_weight": 0.0,
+     "gc_g_dry_weight_lci": 0.0,
+     "gc_g_dry_weight_uci": 0.0,
+     "gc_g_dry_weight_pmmov": 0.0,
+     "gc_g_dry_weight_pmmov_lci": 0,
+     "gc_g_dry_weight_pmmov_uci": 0,
+     "gc_g_dry_weight_trimmed5": 8476.638656862746,
+     "gc_g_dry_weight_trimmed5_pmmov": 6.541713873299697e-05,
+     "activity_category": "very low"
+    },
+    "PMMoV": {
+     "num_wells": 2,
+     "gc_g_dry_weight": 126244492.92929295,
+     "gc_g_dry_weight_lci": 117702530.34343435,
+     "gc_g_dry_weight_uci": 134606548.2828283,
+     "gc_g_dry_weight_pmmov": null,
+     "gc_g_dry_weight_pmmov_lci": null,
+     "gc_g_dry_weight_pmmov_uci": null,
+     "gc_g_dry_weight_trimmed5": 126244492.92929295,
+     "gc_g_dry_weight_trimmed5_pmmov": null,
+     "activity_category": "not calculated"
+    }
+   }
+  }
+ ],
+ "plant": {
+  "id": "b50c6424-02d1-482f-b928-dbed1d7eab25",
+  "uid": "b50c6424",
+  "country": "United States",
+  "city": "Boston Metropolitan Area",
+  "state": "Massachusetts",
+  "name": "Boston, MA",
+  "site_name": "Deer Island Treatment Plant",
+  "place_name": "Boston Metropolitan Area, Massachusetts",
+  "counties_served": [
+   "25025",
+   "25021",
+   "25017",
+   "25027",
+   "25023"
+  ],
+  "flow_rate": null,
+  "sewershed_pop": 2400000,
+  "zipcode": "02152",
+  "allow_download": false,
+  "liquids": false,
+  "is_wwscan": true,
+  "point": {
+   "type": "Point",
+   "coordinates": [
+    -70.95715938546523,
+    42.35151427002792
+   ]
+  },
+  "uuid": "b50c6424-02d1-482f-b928-dbed1d7eab25"
+ },
+ "updated": "2026-08-08T09:19:12.482638"
+}
