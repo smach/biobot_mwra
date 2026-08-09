@@ -19,6 +19,9 @@ jobs:
   check-wwscan:
     runs-on: ubuntu-latest
 
+    outputs:
+      data_updated: ${{ steps.check.outputs.data_updated }}
+
     # Same prebuilt image as the MWRA workflow: R, packages, and
     # curl-impersonate are all baked in, so nothing installs at run time.
     container:
@@ -103,10 +106,11 @@ jobs:
 
   # Republish docs/ so the dashboard picks up the new CSV. Pushes made with
   # GITHUB_TOKEN don't trigger other workflows, so this can't rely on
-  # check-data.yml's deploy job firing.
+  # check-data.yml's deploy job firing. Only runs when there was actually new
+  # data -- most daily runs find nothing and have nothing to redeploy.
   deploy-pages:
     needs: check-wwscan
-    if: always() && needs.check-wwscan.result != 'failure'
+    if: needs.check-wwscan.result == 'success' && needs.check-wwscan.outputs.data_updated == 'true'
     runs-on: ubuntu-latest
 
     permissions:

@@ -195,7 +195,9 @@ wwscan_trend <- function(data, days = WWSCAN_TREND_DAYS,
   latest <- max(data$date, na.rm = TRUE)
   # An NA in `date` would index NA rows into the window rather than dropping
   # them, so it has to be excluded explicitly, not just compared against.
-  keep <- !is.na(data$date) & data$date >= latest - days &
+  # Half-open window (latest - days, latest], matching wwscan_window_mean(),
+  # so the trend and the change sentence describe the same "last 21 days".
+  keep <- !is.na(data$date) & data$date > latest - days &
     !is.na(data$covid_unsmoothed)
   window <- data[keep, ]
 

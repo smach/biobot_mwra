@@ -58,6 +58,9 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add data/ output/ state/ docs/
           git diff --staged --quiet || git commit -m "Update MWRA Biobot data (${{ steps.check.outputs.sample_date }})"
+          # check-wwscan.yml also commits to main; rebase rather than fail if
+          # it landed something between checkout and push.
+          git pull --rebase origin main
           git push
 
       - name: Create notification issue
