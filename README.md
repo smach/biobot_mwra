@@ -293,9 +293,12 @@ biobot_mwra/
 
 ## Email notifications
 
-The emails that go out when there's new data are sent by a separate R script on
-my Linux server (`/srv/shiny-server/framingham_covid`), not from this repo. That
-script reads `wwscan_summary.json` and `wwscan_covid.csv` from GitHub rather
-than fetching or recalculating anything, so the trend math lives in one place.
-It sends at most weekly, but breaks that cadence immediately when the level or
-trend direction changes.
+I send myself an email when there's new data. That runs outside this repo and
+just reads the published files below, so nothing here needs to know about it.
+
+If you're reusing this code, treat these two as a **stable interface** rather
+than internal dashboard files — anything consuming them over HTTP will break
+silently if their fields are renamed, and this repo's tests won't catch it:
+
+- `docs/data/wwscan_summary.json` — headline, level, trend, change sentence
+- `data/processed/wwscan_covid.csv` — the full series
