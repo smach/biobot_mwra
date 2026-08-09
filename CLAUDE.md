@@ -93,7 +93,9 @@ If any of these need re-checking, the README documents how to re-derive them fro
 
 **`docs/data/wwscan_summary.json` is the single source of truth for the headline**, consumed by both the dashboard JS and the server email script. Don't reimplement the tertile cutoffs or the slope test in JavaScript or on the server.
 
-**Email lives outside this repo.** `/srv/shiny-server/framingham_covid/run_wwscan_email.R` on Sharon's Linux server reads the published CSV and summary from GitHub raw. Local copy: `D:\Sharon\Docs\R\shiny-server\framingham_covid`. That local copy may lag the server — diff before deploying, and don't edit the existing MWRA modules there.
+**`docs/data/wwscan_summary.json` and `data/processed/wwscan_covid.csv` are a published interface**, not private dashboard files — they are fetched over HTTP from `raw.githubusercontent.com` by a consumer outside this repo. Renaming their fields or paths breaks that consumer silently, and nothing in this repo's test suite will catch it. Treat a change to either as a breaking change.
+
+**This file is public.** It is committed to a public GitHub repo, so keep deployment specifics, server paths, hostnames, and anything else environment-specific out of it. Those live in `.claude/DEPLOYMENT.md`, which is gitignored — read that file when working on anything deployment-related.
 
 ## Testing conventions
 
