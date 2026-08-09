@@ -196,6 +196,73 @@
         .stat-box.north .stat-value { color: #1a5d1a; }
         .stat-box.south .stat-value { color: #2166ac; }
 
+        .section-heading {
+            margin: 28px 0 12px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e6ed;
+        }
+
+        .section-heading h2 {
+            color: #2c3e50;
+            font-size: clamp(1.05rem, 3.5vw, 1.3rem);
+        }
+
+        .section-heading p {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+
+        .status-strip {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 12px 14px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .level-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white;
+            background: #7f8c8d;
+        }
+
+        .level-badge.low { background: #2e8b57; }
+        .level-badge.medium { background: #d68910; }
+        .level-badge.high { background: #c0392b; }
+
+        .status-text {
+            flex: 1;
+            min-width: 200px;
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+
+        .status-text .change-note {
+            display: block;
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+
+        #chartWwscan {
+            width: 100%;
+            height: 420px;
+        }
+
+        .caveat {
+            margin-top: 12px;
+            font-size: 0.78rem;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+
         footer {
             text-align: center;
             margin-top: 20px;
@@ -229,6 +296,10 @@
             #chartSouth, #chartNorth {
                 height: 350px;
             }
+
+            #chartWwscan {
+                height: 320px;
+            }
         }
     </style>
 </head>
@@ -251,7 +322,7 @@
 
             <div class="control-group">
                 <label>Date Range</label>
-                <div class="preset-buttons">
+                <div class="preset-buttons" id="biobotPresets">
                     <button class="preset-btn active" data-days="90">90d</button>
                     <button class="preset-btn" data-days="180">6mo</button>
                     <button class="preset-btn" data-days="365">1yr</button>
@@ -288,8 +359,49 @@
             <div class="stats" id="statsNorth"></div>
         </div>
 
+        <div class="section-heading" id="wwscanSection">
+            <h2>WastewaterSCAN — Deer Island</h2>
+            <p>The same sewershed, sampled two to three times a week by a different program.</p>
+        </div>
+
+        <div class="chart-container">
+            <div class="status-strip" id="wwscanStatus" style="display:none;">
+                <span class="level-badge" id="wwscanBadge">—</span>
+                <span class="status-text">
+                    <span id="wwscanHeadline"></span>
+                    <span class="change-note" id="wwscanChange"></span>
+                </span>
+            </div>
+
+            <div class="control-group" style="margin-bottom:12px;">
+                <label>Date Range</label>
+                <div class="preset-buttons" id="wwscanPresets">
+                    <button class="preset-btn" data-days="90">90d</button>
+                    <button class="preset-btn active" data-days="180">6mo</button>
+                    <button class="preset-btn" data-days="365">1yr</button>
+                    <button class="preset-btn" data-days="0">All</button>
+                </div>
+            </div>
+
+            <div id="chartWwscan"><div class="loading">Loading data...</div></div>
+
+            <p class="caveat">
+                Values are SARS-CoV-2 N gene copies per gram of dry solids, normalized to PMMoV
+                and multiplied by one million — the same units the
+                <a href="https://data.wastewaterscan.org/?plantId=b50c6424-02d1-482f-b928-dbed1d7eab25" target="_blank">WastewaterSCAN dashboard</a>
+                plots. The dashed lines are the national 33rd and 66th percentiles that define
+                the low / medium / high label. <strong>These numbers cannot be compared with the
+                MWRA Biobot charts above</strong>, which use a different lab method and report
+                copies per mL of wastewater.
+            </p>
+        </div>
+
         <footer>
-            Data source: <a href="https://www.mwra.com/biobot/biobotdata.htm" target="_blank">MWRA Biobot Data</a>
+            Data sources:
+            <a href="https://www.mwra.com/biobot/biobotdata.htm" target="_blank">MWRA Biobot Data</a>
+            &middot;
+            <a href="https://www.wastewaterscan.org/" target="_blank">WastewaterSCAN</a>
+            (Stanford, Emory, and Verily)
         </footer>
     </div>
 
@@ -393,7 +505,7 @@
         }
 
         function updatePresetButtons() {
-            document.querySelectorAll('.preset-btn').forEach(btn => {
+            document.querySelectorAll('#biobotPresets .preset-btn').forEach(btn => {
                 btn.classList.toggle('active', parseInt(btn.dataset.days) === currentPreset);
             });
         }
@@ -638,15 +750,171 @@
         });
         document.getElementById('showCI').addEventListener('change', updateCharts);
 
-        document.querySelectorAll('.preset-btn').forEach(btn => {
+        document.querySelectorAll('#biobotPresets .preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 setDateRange(parseInt(btn.dataset.days));
                 updateCharts();
             });
         });
 
+        // --- WastewaterSCAN (Deer Island) ---
+        // Kept entirely separate from the Biobot charts above: different data,
+        // different units, its own date range, its own failure mode.
+
+        let wwscanData = [];
+        let wwscanChart = null;
+        let wwscanPreset = 180;
+        let wwscanThresholds = null;
+
+        async function loadWwscan() {
+            const el = document.getElementById('chartWwscan');
+            try {
+                const response = await fetch('data/wwscan_covid.csv');
+                if (!response.ok) throw new Error('data not published yet');
+                const rows = parseCSV(await response.text());
+
+                wwscanData = rows.map(d => ({
+                    date: new Date(d.date),
+                    covid: parseFloat(d.covid),
+                    unsmoothed: parseFloat(d.covid_unsmoothed),
+                    level: d.level
+                })).filter(d => !isNaN(d.date.getTime()) && !isNaN(d.covid));
+
+                if (wwscanData.length === 0) throw new Error('no usable rows');
+                wwscanData.sort((a, b) => a.date - b.date);
+
+                // The summary is computed in R so the tertile cutoffs and the
+                // trend test aren't reimplemented (and allowed to drift) here.
+                try {
+                    const sres = await fetch('data/wwscan_summary.json');
+                    if (sres.ok) showWwscanSummary(await sres.json());
+                } catch (e) { /* chart is still useful without the banner */ }
+
+                wwscanChart = echarts.init(el);
+                window.addEventListener('resize', () => wwscanChart.resize());
+                renderWwscan();
+            } catch (error) {
+                el.innerHTML = `<div class="error">WastewaterSCAN data unavailable: ${error.message}</div>`;
+            }
+        }
+
+        function showWwscanSummary(summary) {
+            wwscanThresholds = summary;
+            const badge = document.getElementById('wwscanBadge');
+            badge.textContent = summary.level;
+            badge.className = 'level-badge ' + summary.level;
+
+            const sampled = new Date(summary.latest_date + 'T00:00:00')
+                .toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            document.getElementById('wwscanHeadline').textContent =
+                `${summary.headline}. Latest sample ${sampled}.`;
+            document.getElementById('wwscanChange').textContent = summary.change_text;
+            document.getElementById('wwscanStatus').style.display = 'flex';
+        }
+
+        function renderWwscan() {
+            const maxDate = wwscanData[wwscanData.length - 1].date;
+            let visible = wwscanData;
+
+            if (wwscanPreset > 0) {
+                const cutoff = new Date(maxDate);
+                cutoff.setDate(cutoff.getDate() - wwscanPreset);
+                visible = wwscanData.filter(d => d.date >= cutoff);
+            }
+
+            const lineData = visible.map(d => [formatDate(d.date), d.covid]);
+            const pointData = visible
+                .filter(d => !isNaN(d.unsmoothed))
+                .map(d => [formatDate(d.date), d.unsmoothed]);
+
+            const series = [
+                {
+                    name: 'Individual samples',
+                    type: 'scatter',
+                    data: pointData,
+                    symbolSize: 5,
+                    itemStyle: { color: '#b0bec5' },
+                    z: 1
+                },
+                {
+                    name: 'Smoothed',
+                    type: 'line',
+                    data: lineData,
+                    smooth: false,
+                    showSymbol: false,
+                    lineStyle: { width: 2.5, color: '#6a4c93' },
+                    itemStyle: { color: '#6a4c93' },
+                    z: 5
+                }
+            ];
+
+            // Draw the national low/medium/high boundaries as reference lines.
+            if (wwscanThresholds) {
+                series[1].markLine = {
+                    silent: true,
+                    symbol: 'none',
+                    lineStyle: { type: 'dashed', color: '#95a5a6' },
+                    label: { formatter: p => p.name, fontSize: 10, color: '#7f8c8d' },
+                    data: [
+                        { yAxis: wwscanThresholds.tertile_33, name: 'low / medium' },
+                        { yAxis: wwscanThresholds.tertile_66, name: 'medium / high' }
+                    ]
+                };
+            }
+
+            wwscanChart.setOption({
+                title: {
+                    text: 'SARS-CoV-2, PMMoV-normalized (×1 million)',
+                    left: 'center',
+                    textStyle: { fontSize: 14 }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        if (!params.length) return '';
+                        const d = new Date(params[0].axisValue + 'T00:00:00');
+                        const label = d.toLocaleDateString('en-US',
+                            { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                        const lines = params.map(p =>
+                            `${p.seriesName}: ${Math.round(p.value[1]).toLocaleString()}`);
+                        return `<strong>${label}</strong><br>${lines.join('<br>')}`;
+                    }
+                },
+                legend: { bottom: 0, itemHeight: 8, textStyle: { fontSize: 11 } },
+                grid: { left: 60, right: 20, top: 50, bottom: 60 },
+                xAxis: {
+                    type: 'category',
+                    axisLabel: {
+                        formatter: value => formatDateShort(new Date(value + 'T00:00:00')),
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'Normalized copies',
+                    nameLocation: 'middle',
+                    nameGap: 45,
+                    axisLabel: { formatter: value => value.toLocaleString() }
+                },
+                series: series,
+                dataZoom: [{ type: 'inside', start: 0, end: 100 }]
+            }, true);
+        }
+
+        document.querySelectorAll('#wwscanPresets .preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!wwscanChart) return;  // data never loaded
+                wwscanPreset = parseInt(btn.dataset.days);
+                document.querySelectorAll('#wwscanPresets .preset-btn').forEach(b => {
+                    b.classList.toggle('active', parseInt(b.dataset.days) === wwscanPreset);
+                });
+                renderWwscan();
+            });
+        });
+
         // Initialize
         loadData();
+        loadWwscan();
     </script>
 </body>
 </html>

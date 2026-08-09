@@ -91,6 +91,48 @@ jobs:
               labels: ['data-update', 'automated']
             });
 
+      # MWRA sometimes pauses publishing for weeks. Say so once, rather than
+      # failing twice a day or staying silent (which is what used to happen).
+      - name: Report stalled MWRA publishing
+        if: steps.check.outputs.data_stale == 'true'
+        uses: actions/github-script@v7
+        env:
+          STALE_DAYS: ${{ steps.check.outputs.stale_days }}
+        with:
+          script: |
+            const staleDays = process.env.STALE_DAYS;
+            const label = 'stale-data';
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label
+            });
+
+            if (existing.data.length > 0) {
+              core.info('Stale-data issue already open; not filing another.');
+              return;
+            }
+
+            const pagesUrl = 'https://' + context.repo.owner + '.github.io/' + context.repo.repo;
+            const body = '## MWRA Biobot data has stalled\n\n' +
+              'The MWRA Biobot page still loads, but the newest published sample is **' +
+              staleDays + ' days old**.\n\n' +
+              'The scraper is working — MWRA simply has not posted new data. ' +
+              'Nothing to fix here unless this goes on much longer.\n\n' +
+              'In the meantime, the [WastewaterSCAN pipeline](' + pagesUrl + ') covers the same ' +
+              'Deer Island sewershed and updates every few days.\n\n' +
+              '*Close this issue once MWRA resumes; it will not be refiled while it stays open.*';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'MWRA Biobot data stalled — ' + staleDays + ' days without an update',
+              body: body,
+              labels: [label, 'automated']
+            });
+
       - name: Upload plots artifact
         if: steps.check.outputs.data_updated == 'true'
         uses: actions/upload-artifact@v4
@@ -109,6 +151,11 @@ jobs:
       contents: read
       pages: write
       id-token: write
+
+    # Shared with check-wwscan.yml so the two workflows never deploy at once.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
 
     environment:
       name: github-pages

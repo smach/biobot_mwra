@@ -4,6 +4,17 @@
 
 See and download metro Boston Covid wastewater testing data as a [CSV](https://github.com/smach/biobot_mwra/blob/main/data/processed/combined_data.csv) and not just a PDF. Explore the data in an [interactive dashboard](https://smach.github.io/biobot_mwra/) that lets you set date ranges and view error bars.
 
+There are now **two independent pipelines** in this repo for the same metro Boston sewershed:
+
+| | MWRA Biobot | WastewaterSCAN |
+|---|---|---|
+| Source | [MWRA Biobot PDF](https://www.mwra.com/biobot/biobotdata.htm) | [WastewaterSCAN](https://data.wastewaterscan.org/) JSON feed |
+| Frequency | Roughly weekly, and it has paused for weeks at a time | Two to three samples a week |
+| Units | Copies per mL of wastewater, flow-adjusted | Gene copies per gram dry solids, PMMoV-normalized |
+| Runner | `run_monitor.R` | `run_wwscan.R` |
+
+The two measure the same virus in the same sewershed with different lab methods, so **their numbers cannot be compared or combined**. They're kept as separate series everywhere: separate CSVs, separate state files, separate charts.
+
 ## Longer Overview
 
 This project, written partly by Claude Opus 4.5, streamlines and improves some code I wrote pre-GenAI years ago to monitor [Massachusetts Water Resources Authority (MWRA) Biobot Covid wastewater testing data](https://www.mwra.com/biobot/biobotdata.htm). I never made that code public because, well, I wasn't super proud of it 😅 -- I wrote it in a hurry at the start of the pandemic and never really rationalized it or cleaned it up.
@@ -37,6 +48,25 @@ Each CSV contains these columns:
 | `lower_ci` | Lower 95% confidence interval |
 | `upper_ci` | Upper 95% confidence interval |
 | `system` | "North" or "South" (combined_data.csv only) |
+
+### WastewaterSCAN CSV
+
+`data/processed/wwscan_covid.csv` holds the SARS-CoV-2 series for the Deer Island
+treatment plant (the "Boston, MA" site on the WastewaterSCAN dashboard, serving
+about 2.4 million people).
+
+| Column | Description |
+|--------|-------------|
+| `date` | Sample collection date |
+| `covid` | Smoothed (5-sample trimmed mean), PMMoV-normalized, × 1,000,000 — the line WastewaterSCAN plots |
+| `covid_unsmoothed` | The single-sample value, same units |
+| `lower_ci` / `upper_ci` | 95% interval around `covid_unsmoothed` |
+| `level` | `low` / `medium` / `high` against national tertile cutoffs |
+| `activity_category` | WastewaterSCAN's own per-sample label, which is *plant-relative* and will often disagree with `level` |
+
+`docs/data/wwscan_summary.json` carries the current headline, level, trend, and
+change sentence. It exists so the dashboard and the email script display the
+same numbers instead of each recomputing them.
 
 ### Source PDF
 
@@ -90,6 +120,68 @@ The script will:
 4. Generate plots
 5. Update the web dashboard
 
+## The WastewaterSCAN pipeline
+
+MWRA sends its Deer Island samples to WastewaterSCAN as well as to Biobot.
+When Biobot went quiet for weeks in July 2026, that second feed was still
+publishing every two or three days — hence this pipeline.
+
+```r
+source("run_wwscan.R")
+```
+
+It fetches the feed, extracts the SARS-CoV-2 series, writes the CSV and summary,
+and updates `state/wwscan_state.json`. `.github/workflows/check-wwscan.yml` runs
+it daily and files a GitHub issue whenever there's a new sample.
+
+### Where the data actually comes from
+
+`data.wastewaterscan.org` is a static site that reads per-plant JSON straight
+from a public Google Cloud Storage bucket. This pipeline reads the same file:
+
+```
+https://storage.googleapis.com/wastewater-dev-data/json/b50c6424-02d1-482f-b928-dbed1d7eab25.json
+```
+
+That is an internal endpoint, not a documented API, and the bucket is named
+`wastewater-dev-data` — it could move without notice. **If it ever 404s or stops
+returning JSON, the run fails loudly** rather than quietly going stale. To
+re-derive the URL: load the dashboard, look through its `/_nuxt/*.js` bundles for
+`storage.googleapis.com`, and find the `plants.json` / per-plant URL builders.
+`plants.json` also lets you look the Deer Island plant ID up again by name.
+
+### How the level and trend are calculated
+
+Both deliberately mirror what the WastewaterSCAN dashboard itself reports, so
+an email and their site never appear to contradict each other:
+
+- **Level** compares the latest smoothed value against national 33rd/66th
+  percentile cutoffs for the N Gene target (20.33 and 105.40 in these units).
+  Those cutoffs are hardcoded in the dashboard's JavaScript rather than served
+  as data, so they're copied into `R/05_wwscan.R` as constants. Re-check them
+  the same way you'd re-derive the URL above.
+- **Trend** is an ordinary least squares fit of the *unsmoothed* values over the
+  trailing 21 days, called a trend only when p < 0.05. The unsmoothed series
+  matters here: the smoothed one is autocorrelated by construction and would
+  report a significant trend nearly every week.
+
+Verified against the dashboard on 2026-08-08, when it reported "SARS-CoV-2
+Medium / No trend in the last 21 days and medium concentration" — which is
+exactly what this code produces for the same data.
+
+### Attribution and terms
+
+Data comes from [WastewaterSCAN](https://www.wastewaterscan.org/), a program run
+by Stanford and Emory with Verily. They ask that any use of the data cite them,
+which the dashboard, the GitHub issues, and the emails all do.
+
+One thing worth knowing: the Boston plant record carries `allow_download: false`,
+which is what hides the dashboard's own CSV download button for this site. The
+JSON this pipeline reads is public and unauthenticated — it's what the dashboard
+itself loads to draw its charts — but that flag suggests the data partner didn't
+opt into bulk downloads. If you're doing anything beyond personal/civic
+monitoring, email them first: `info@wastewaterscan.org`.
+
 ## Data Source
 
 [MWRA Biobot Data Page](https://www.mwra.com/biobot/biobotdata.htm)
@@ -112,12 +204,27 @@ Only the most recent PDF and CSV files are kept (overwritten on each update).
 
 ## GitHub Actions
 
-The workflow runs on a cron job and:
-1. Checks for new data
-2. Downloads and processes new PDFs
-3. Commits updated data and plots
-4. Deploys dashboard to GitHub Pages
-5. Creates a GitHub Issue notification
+`check-data.yml` (MWRA Biobot, twice daily) and `check-wwscan.yml`
+(WastewaterSCAN, daily) both:
+
+1. Check for new data
+2. Process it
+3. Commit updated files
+4. Deploy the dashboard to GitHub Pages
+5. Create a GitHub Issue notification
+
+Both deploy jobs share a `pages` concurrency group so they can't deploy at the
+same time, and the WastewaterSCAN job rebases before pushing since both commit
+to `main`.
+
+### When MWRA stops publishing
+
+A long publishing pause used to be invisible: the page loads, nothing is new,
+the run exits green, and nobody hears about it. That's exactly what happened in
+July 2026. Now, when MWRA's newest published sample passes 14 days old,
+`check-data.yml` opens a single `stale-data` issue and won't file another while
+it stays open. The scraper isn't broken in that situation, so the run itself
+still succeeds.
 
 ### Container-based runtime
 
@@ -158,24 +265,37 @@ or MWRA has stopped publishing — both deserve a look).
 ```
 biobot_mwra/
 ├── .github/workflows/
-│   ├── check-data.yml
+│   ├── check-data.yml       # MWRA Biobot, twice daily
+│   ├── check-wwscan.yml     # WastewaterSCAN, daily
 │   └── build-image.yml
 ├── Dockerfile
 ├── R/
-│   ├── utils.R
+│   ├── utils.R              # state, retries, the single network entry point
 │   ├── 01_check_updates.R
 │   ├── 02_download_pdf.R
 │   ├── 03_extract_data.R
-│   └── 04_visualize.R
+│   ├── 04_visualize.R
+│   └── 05_wwscan.R          # WastewaterSCAN fetch, parse, level, trend
 ├── data/
 │   ├── latest_data.pdf
-│   └── processed/
+│   └── processed/           # *.csv for both pipelines
 ├── docs/
 │   ├── index.html
-│   └── data/
+│   └── data/                # combined_data.csv, wwscan_covid.csv, wwscan_summary.json
 ├── output/plots/
 ├── state/
-│   └── last_update.json
-├── run_monitor.R
+│   ├── last_update.json     # MWRA
+│   └── wwscan_state.json    # WastewaterSCAN
+├── run_monitor.R            # MWRA pipeline
+├── run_wwscan.R             # WastewaterSCAN pipeline
 └── README.md
 ```
+
+## Email notifications
+
+The emails that go out when there's new data are sent by a separate R script on
+my Linux server (`/srv/shiny-server/framingham_covid`), not from this repo. That
+script reads `wwscan_summary.json` and `wwscan_covid.csv` from GitHub rather
+than fetching or recalculating anything, so the trend math lives in one place.
+It sends at most weekly, but breaks that cadence immediately when the level or
+trend direction changes.
