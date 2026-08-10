@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-An R pipeline that scrapes MWRA's Biobot COVID wastewater PDF, extracts the data tables, writes CSVs, generates static plots, and updates a JS dashboard published to GitHub Pages. Runs twice daily via GitHub Actions. State (the last known sample date) is committed to the repo, so runs are stateless between CI invocations.
+An R pipeline that scrapes MWRA's Biobot COVID wastewater PDF, extracts the data tables, writes CSVs, generates static plots, and updates a JS dashboard published to GitHub Pages. Runs once daily via GitHub Actions. State (the last known sample date and the last time the bot wall let us through) is committed to the repo, so runs are stateless between CI invocations.
 
 Since August 2026 there is a **second, parallel pipeline** (`run_wwscan.R` + `R/05_wwscan.R`) reading WastewaterSCAN's feed for the same Deer Island sewershed. It exists because MWRA's Biobot publishing stalled for 19 days in July 2026. The two pipelines share only `R/utils.R`; they have separate state files, CSVs, workflows, and charts.
 
@@ -65,7 +65,7 @@ There is no build step and no linter configured.
 
 **The MWRA bot wall is the central design constraint.** MWRA sits behind an Imperva/Incapsula challenge that intermittently serves an interstitial page instead of real content — to both the page scrape and the PDF download. `impersonate_fetch()` shells out to `curl-impersonate` (patched curl with a Chrome TLS fingerprint) rather than using httr2/libcurl, because plain libcurl traffic gets fingerprinted and blocked. `is_bot_challenge()` detects the interstitial by signature strings.
 
-A challenge is treated as a **transient no-op** — clean exit, no alarm — *unless* the newest processed data is older than `MAX_STALE_DAYS` (14, in `run_monitor.R`), in which case the run fails loudly. See `handle_challenge()` in `run_monitor.R` and `data_staleness_days()` in `R/utils.R`. Any change to fetch or retry logic must preserve this distinction between "challenged, retry next run" and "genuinely broken, wake a human." `last_sample_date` advances only on a fully successful run, which is what makes the staleness check survive fresh CI checkouts — no per-run counter would.
+A challenge is treated as a **transient no-op** — clean exit, no alarm — *unless* the bypass hasn't gotten a clean page load through the bot wall in `MAX_STALE_DAYS` (14, in `run_monitor.R`), in which case the run fails loudly. See `handle_challenge()` in `run_monitor.R` and `fetch_staleness_days()` in `R/utils.R`. Crucially, this is keyed off `last_successful_fetch` (when the bypass last worked), **not** off how old the *data* is: MWRA routinely pauses publishing for weeks with a healthy bypass — that pause is a separate, benign signal reported once via the `stale-data` issue (driven by `data_staleness_days()` / `last_sample_date`), and it must not turn every challenged run red. Any change to fetch or retry logic must preserve this three-way distinction: "challenged but bypass healthy, retry next run" vs "MWRA paused publishing, file one issue" vs "bypass genuinely shut out, wake a human." `last_successful_fetch` advances on any clean page load (new data or not) and `last_sample_date` only on a fully successful data run; both survive fresh CI checkouts because `check-data.yml` commits `state/` on clean runs, not only on data updates — a per-run counter would not.
 
 **`impersonate_fetch()` is the only network entry point** in the codebase. Every network-touching test stubs it. Keep it that way; adding a second fetch path would silently escape both the challenge handling and the test seams.
 
@@ -73,7 +73,7 @@ A challenge is treated as a **transient no-op** — clean exit, no alarm — *un
 
 **Dashboard** (`docs/index.html`): a single self-contained HTML/CSS/JS file using ECharts 5.4.3 from CDN, calling `fetch('data/combined_data.csv')`. That `fetch` is why it needs a real web server locally. No build step. Deployed by the `deploy-pages` job in `check-data.yml`, which re-deploys `docs/` from `main` after `check-data`.
 
-**GitHub Actions handoff**: `run_monitor.R` writes `data_updated` and `sample_date` to `$GITHUB_OUTPUT` via `set_gha_output()`. `check-data.yml` gates the commit/push, issue creation, and artifact upload on those values. `run_monitor.R` also emits `data_stale`/`stale_days` when MWRA has published nothing for over `MAX_STALE_DAYS`, which files one `stale-data` issue (guarded by an open-issue check, so it never repeats). Free-text outputs reach `github-script` through `env:`, never string interpolation.
+**GitHub Actions handoff**: `run_monitor.R` writes `data_updated` and `sample_date` to `$GITHUB_OUTPUT` via `set_gha_output()`. `check-data.yml` gates the commit/push, issue creation, and artifact upload on those values. It also emits `fetch_ok` on any clean page load, which triggers a state-only commit so `last_successful_fetch` persists across CI checkouts (see the bot-wall paragraph above). `run_monitor.R` also emits `data_stale`/`stale_days` when MWRA has published nothing for over `MAX_STALE_DAYS`, which files one `stale-data` issue (guarded by an open-issue check, so it never repeats). Free-text outputs reach `github-script` through `env:`, never string interpolation.
 
 ## The WastewaterSCAN pipeline
 

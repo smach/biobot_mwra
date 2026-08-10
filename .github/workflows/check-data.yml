@@ -1,9 +1,11 @@
 name: Check MWRA Biobot Data
 
 on:
-  # Run twice daily at 13:48 and 21:48 UTC
+  # Run once daily at 13:48 UTC. MWRA publishes weekly at most even when
+  # healthy, so once a day catches a resume promptly without doubling the noise
+  # and CI minutes.
   schedule:
-    - cron: '48 13,21 * * *'
+    - cron: '48 13 * * *'
 
   # Allow manual trigger
   workflow_dispatch:
@@ -48,16 +50,28 @@ jobs:
         id: check
         run: Rscript run_monitor.R
 
+      # Commit on a real data update (data + plots + docs + state), and also on
+      # a clean no-new-data run (state only) so last_successful_fetch persists
+      # across fresh CI checkouts -- without that, the bot-challenge alarm keyed
+      # off it in run_monitor.R would reset to stale every run and false-fail.
       - name: Commit and push changes
-        if: steps.check.outputs.data_updated == 'true'
+        if: steps.check.outputs.data_updated == 'true' || steps.check.outputs.fetch_ok == 'true'
         run: |
           # Running as root inside the container, the checkout is owned by a
           # different uid, so mark the workspace safe before touching git.
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ output/ state/ docs/
-          git diff --staged --quiet || git commit -m "Update MWRA Biobot data (${{ steps.check.outputs.sample_date }})"
+          if [ "${{ steps.check.outputs.data_updated }}" = "true" ]; then
+            git add data/ output/ state/ docs/
+            msg="Update MWRA Biobot data (${{ steps.check.outputs.sample_date }})"
+          else
+            # No new data, but the page loaded cleanly -- persist just the fetch
+            # marker so a later challenged run stays a quiet no-op.
+            git add state/
+            msg="Record successful MWRA fetch"
+          fi
+          git diff --staged --quiet || git commit -m "$msg"
           # check-wwscan.yml also commits to main; rebase rather than fail if
           # it landed something between checkout and push.
           git pull --rebase origin main

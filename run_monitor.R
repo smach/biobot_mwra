@@ -32,32 +32,36 @@ if (force) message("FORCE MODE enabled")
 message("")
 
 # A transient Imperva bot challenge is tolerated as a clean no-op -- the next
-# run almost always recovers -- but if the newest processed data is already
-# this old, the pipeline hasn't truly succeeded in a long time (broken bypass
-# or MWRA stopped publishing) and the run should fail loudly instead.
+# run almost always recovers -- but if the bypass hasn't gotten a clean page
+# load through the bot wall in this long, it is genuinely broken (or the wall
+# changed) and the run should fail loudly instead. Note this is deliberately
+# NOT keyed off how old the *data* is: MWRA can pause publishing for weeks with
+# a perfectly healthy bypass, and that pause is reported separately via the
+# one-time stale-data issue below -- it must not turn every challenged run red.
 MAX_STALE_DAYS <- 14
 
-# Handle an all-retries-challenged fetch: no false alarm while the data is
-# reasonably fresh, hard failure once it goes stale. Called for both the
-# update check (Step 1) and the PDF download (Step 2). Note: no quit() here;
-# run_monitor.R is also source()d interactively.
+# Handle an all-retries-challenged fetch: no false alarm while the bypass is
+# still getting through on other runs, hard failure once it has been shut out
+# for MAX_STALE_DAYS. Called for both the update check (Step 1) and the PDF
+# download (Step 2). Note: no quit() here; run_monitor.R is also source()d
+# interactively.
 handle_challenge <- function(where) {
   message("")
   message("MWRA served a bot-challenge page during the ", where, ".")
   set_gha_output("data_updated", "false")
 
-  stale_days <- data_staleness_days()
+  stale_days <- fetch_staleness_days()
   if (!is.na(stale_days) && stale_days > MAX_STALE_DAYS) {
     stop(sprintf(paste0(
-      "Bot challenge encountered and the newest data is %.0f days old ",
-      "(limit %d). Either the curl-impersonate bypass no longer works or ",
-      "MWRA has stopped publishing -- needs a human look."),
+      "Bot challenge encountered and MWRA's page has not loaded cleanly in ",
+      "%.0f days (limit %d). The curl-impersonate bypass appears to be shut ",
+      "out -- needs a human look."),
       stale_days, MAX_STALE_DAYS))
   }
 
-  message("Newest data is ",
-          if (is.na(stale_days)) "of unknown age"
-          else sprintf("%.0f day(s) old", stale_days),
+  message("Bypass last got through ",
+          if (is.na(stale_days)) "at an unknown time"
+          else sprintf("%.0f day(s) ago", stale_days),
           "; treating this as transient. The next run should recover.")
 }
 
@@ -72,6 +76,12 @@ if (identical(update_info$status, "challenge")) {
   set_gha_output("data_updated", "false")
   stop("Check failed")
 } else {
+
+  # The page loaded cleanly (real content, not a challenge), so the bypass is
+  # working right now. Record it -- committed on clean runs by the workflow --
+  # so a later challenged run keeps quiet instead of tripping the hard-fail.
+  record_successful_fetch()
+  set_gha_output("fetch_ok", "true")
 
   message("  Current sample date: ", update_info$sample_date)
   message("  Previous sample date: ",
