@@ -27,16 +27,43 @@ save_state <- function(state, state_file = "state/last_update.json") {
 
 #' Update state after successful download
 #'
+#' A successful download is by definition a clean fetch (we got the real page
+#' and PDF through the bot wall), so `last_successful_fetch` is advanced too.
+#'
 #' @param sample_date The sample collection date (character, YYYY-MM-DD format)
 #' @param pdf_url The relative PDF URL
 #' @return The updated state list
 update_state <- function(sample_date, pdf_url) {
+  now <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
   state <- list(
     last_sample_date = sample_date,
     last_pdf_url = pdf_url,
-    last_check_time = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
-    last_download_time = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+    last_check_time = now,
+    last_download_time = now,
+    last_successful_fetch = now
   )
+  save_state(state)
+  state
+}
+
+#' Record that MWRA's page loaded cleanly (bypass is working)
+#'
+#' Advances `last_successful_fetch` (and `last_check_time`) whenever the update
+#' check gets the real page back rather than a bot-challenge interstitial --
+#' regardless of whether the data was new. This is what lets a bot challenge be
+#' tolerated as a transient no-op even while MWRA's publishing is paused: the
+#' hard-fail alarm keys off this marker, not off `last_sample_date`, so it fires
+#' only when the bypass genuinely can't get through for a long stretch.
+#'
+#' Persisting across CI runs depends on the workflow committing `state/` on
+#' clean runs, not only on data updates -- see check-data.yml.
+#'
+#' @return The updated state list
+record_successful_fetch <- function() {
+  now <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  state <- load_state()
+  state$last_check_time <- now
+  state$last_successful_fetch <- now
   save_state(state)
   state
 }
@@ -50,11 +77,12 @@ log_check <- function() {
 
 #' Days since the most recent successfully processed sample date
 #'
-#' Used to decide whether a bot challenge can be tolerated as a transient
-#' no-op: `last_sample_date` only advances on successful data runs and (unlike
-#' any per-run counter) is committed to the repo, so it survives across fresh
-#' CI checkouts. If the newest data is old AND we're being challenged, the
-#' pipeline hasn't truly succeeded in a while and should fail loudly.
+#' Measures whether MWRA is still *publishing*: `last_sample_date` only advances
+#' when new data is processed and is committed to the repo, so it survives fresh
+#' CI checkouts. A large value means MWRA has paused (or the pipeline has been
+#' broken for a while) and drives the one-time `stale-data` issue. It is NOT the
+#' signal for tolerating a bot challenge -- that is `fetch_staleness_days()`,
+#' which tracks whether the bypass still works independently of publishing.
 #'
 #' @param state State list (defaults to the persisted state)
 #' @return Numeric days since last_sample_date, or NA if never recorded
@@ -63,6 +91,25 @@ data_staleness_days <- function(state = load_state()) {
     return(NA_real_)
   }
   as.numeric(Sys.Date() - as.Date(state$last_sample_date))
+}
+
+#' Days since MWRA's page last loaded cleanly (bypass last worked)
+#'
+#' Used to decide whether a bot challenge can be tolerated as a transient no-op.
+#' `last_successful_fetch` advances on every clean page load (via
+#' `record_successful_fetch()` / `update_state()`) whether or not the data was
+#' new, so it stays fresh even while MWRA's publishing is paused. Only when the
+#' bypass genuinely can't get through for a long stretch does this grow past the
+#' limit and turn a challenge into a hard failure. Like `last_sample_date`, it
+#' survives fresh CI checkouts only because the workflow commits it.
+#'
+#' @param state State list (defaults to the persisted state)
+#' @return Numeric days since last_successful_fetch, or NA if never recorded
+fetch_staleness_days <- function(state = load_state()) {
+  if (is.null(state$last_successful_fetch)) {
+    return(NA_real_)
+  }
+  as.numeric(Sys.Date() - as.Date(substr(state$last_successful_fetch, 1, 10)))
 }
 
 #' Retry wrapper for network operations

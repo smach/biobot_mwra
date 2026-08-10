@@ -85,6 +85,7 @@ describe("update_state()", {
     expect_equal(result$last_pdf_url, "/biobot/test.pdf")
     expect_true(!is.null(result$last_check_time))
     expect_true(!is.null(result$last_download_time))
+    expect_true(!is.null(result$last_successful_fetch))
   })
 
   it("formats timestamps in ISO 8601 UTC format", {
@@ -215,6 +216,64 @@ describe("data_staleness_days()", {
   it("returns NA when no sample date is recorded", {
     expect_true(is.na(data_staleness_days(list())))
     expect_true(is.na(data_staleness_days(list(last_pdf_url = "/x"))))
+  })
+})
+
+describe("fetch_staleness_days()", {
+  it("returns days since last_successful_fetch", {
+    five_days_ago <- format(Sys.Date() - 5, "%Y-%m-%dT%H:%M:%SZ")
+    expect_equal(
+      fetch_staleness_days(list(last_successful_fetch = five_days_ago)),
+      5
+    )
+  })
+
+  it("parses a timestamp with a time component", {
+    ts <- paste0(format(Sys.Date() - 3, "%Y-%m-%d"), "T22:44:14Z")
+    expect_equal(fetch_staleness_days(list(last_successful_fetch = ts)), 3)
+  })
+
+  it("returns NA when no successful fetch is recorded", {
+    expect_true(is.na(fetch_staleness_days(list())))
+    expect_true(is.na(fetch_staleness_days(list(last_sample_date = "2024-01-01"))))
+  })
+})
+
+describe("record_successful_fetch()", {
+  it("advances last_successful_fetch without touching last_sample_date", {
+    temp_dir <- withr::local_tempdir()
+    state_file <- file.path(temp_dir, "state.json")
+
+    initial_state <- list(
+      last_sample_date = "2024-12-20",
+      last_pdf_url = "/biobot/old.pdf",
+      last_check_time = "2024-12-20T10:00:00Z",
+      last_successful_fetch = "2024-12-20T10:00:00Z"
+    )
+    jsonlite::write_json(initial_state, state_file, auto_unbox = TRUE)
+
+    original_load_state <- load_state
+    original_save_state <- save_state
+    assign("load_state", function(sf = "state/last_update.json") {
+      jsonlite::read_json(state_file)
+    }, envir = .GlobalEnv)
+    assign("save_state", function(state, sf = "state/last_update.json") {
+      jsonlite::write_json(state, state_file, auto_unbox = TRUE, pretty = TRUE)
+    }, envir = .GlobalEnv)
+    on.exit({
+      assign("load_state", original_load_state, envir = .GlobalEnv)
+      assign("save_state", original_save_state, envir = .GlobalEnv)
+    }, add = TRUE)
+
+    record_successful_fetch()
+
+    updated <- jsonlite::read_json(state_file)
+    # Publishing date is untouched; the fetch and check markers advance.
+    expect_equal(updated$last_sample_date, "2024-12-20")
+    expect_true(updated$last_successful_fetch != "2024-12-20T10:00:00Z")
+    expect_true(updated$last_check_time != "2024-12-20T10:00:00Z")
+    expect_match(updated$last_successful_fetch,
+                 "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$")
   })
 })
 
