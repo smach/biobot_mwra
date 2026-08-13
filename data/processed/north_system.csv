@@ -2308,4 +2308,5 @@ date,copies_per_ml,seven_day_avg,lower_ci,upper_ci,system
 2026-07-06,32,37,10,15,North
 2026-07-07,31,31,10,14,North
 2026-07-15,42,42,13,19,North
-2026-07-20,31,36,10,14,North
+2026-07-20,31,36,10,15,North
+2026-07-27,57,26,NA,NA,North
