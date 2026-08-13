@@ -1,11 +1,11 @@
 {
-  "latest_date": "2026-08-05",
-  "latest_value": 65.4,
-  "level": "medium",
+  "latest_date": "2026-08-09",
+  "latest_value": 0,
+  "level": "low",
   "trend": "none",
-  "headline": "No trend in the last 21 days and medium concentration",
-  "change_text": "The average of the last 21 days is 48 (up 15% from 42 over the previous 21 days).",
+  "headline": "No trend in the last 21 days and low concentration",
+  "change_text": "The average of the last 21 days is 37 (down 14% from 43 over the previous 21 days).",
   "tertile_33": 20.3318,
   "tertile_66": 105.4016,
-  "generated": "2026-08-09T02:04:38Z"
+  "generated": "2026-08-13T13:52:00Z"
 }
