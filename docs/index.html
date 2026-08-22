@@ -799,8 +799,9 @@
                 if (wwscanData.length === 0) throw new Error('no usable rows');
                 wwscanData.sort((a, b) => a.date - b.date);
 
-                // The summary is computed in R so the tertile cutoffs and the
-                // trend test aren't reimplemented (and allowed to drift) here.
+                // The summary is assembled in R, which reads the level and
+                // trend from WastewaterSCAN's own published verdicts. Nothing
+                // here (or there) re-runs the significance test.
                 try {
                     const sres = await fetch('data/wwscan_summary.json');
                     if (sres.ok) showWwscanSummary(await sres.json());

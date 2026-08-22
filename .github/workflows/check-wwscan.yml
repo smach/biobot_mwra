@@ -72,6 +72,7 @@ jobs:
           LEVEL: ${{ steps.check.outputs.level }}
           LATEST_VALUE: ${{ steps.check.outputs.latest_value }}
           CHANGE_TEXT: ${{ steps.check.outputs.change_text }}
+          TREND_DETAIL: ${{ steps.check.outputs.trend_detail }}
         with:
           script: |
             const sampleDate = process.env.SAMPLE_DATE;
@@ -79,6 +80,7 @@ jobs:
             const level = process.env.LEVEL;
             const latestValue = process.env.LATEST_VALUE;
             const changeText = process.env.CHANGE_TEXT;
+            const trendDetail = process.env.TREND_DETAIL;
             const repoUrl = 'https://github.com/' + context.repo.owner + '/' + context.repo.repo;
             const pagesUrl = 'https://' + context.repo.owner + '.github.io/' + context.repo.repo;
 
@@ -86,7 +88,8 @@ jobs:
               '**' + headline + '**\n\n' +
               '- **Sample collection date:** ' + sampleDate + '\n' +
               '- **Current level:** ' + level + ' (national tertile)\n' +
-              '- **Latest value:** ' + latestValue + ' (PMMoV-normalized, ×1 million)\n\n' +
+              '- **Latest value:** ' + latestValue + ' (PMMoV-normalized, ×1 million)\n' +
+              '- **WastewaterSCAN trend test:** ' + trendDetail + '\n\n' +
               changeText + '\n\n' +
               '### Links\n\n' +
               '- [Interactive dashboard](' + pagesUrl + ')\n' +

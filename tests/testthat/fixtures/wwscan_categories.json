@@ -1,0 +1,65 @@
+{
+  "b50c6424": {
+    "RSV": {
+      "category": "low",
+      "method": "seasonal",
+      "details": {
+        "onset": false,
+        "sitesInOnset": 0,
+        "sitesNotInOnset": 1
+      },
+      "lastSampleDate": "2026-08-05"
+    },
+    "N Gene": {
+      "category": "medium",
+      "method": "commonly detected",
+      "details": {
+        "trend": {
+          "m": 0.11396808842585934,
+          "p": 0.5466319203768065,
+          "significant": false
+        },
+        "tertile": 2
+      },
+      "lastSampleDate": "2026-08-05"
+    },
+    "S Gene": {
+      "category": "not calculated",
+      "method": "none",
+      "details": {
+        "message": "Not enough recent samples to calculate"
+      },
+      "lastSampleDate": "2023-02-01"
+    }
+  },
+  "aa11bb22": {
+    "N Gene": {
+      "category": "high",
+      "method": "commonly detected",
+      "details": {
+        "trend": {
+          "m": 3.4021,
+          "p": 0.0071,
+          "significant": true
+        },
+        "tertile": 3
+      },
+      "lastSampleDate": "2026-08-05"
+    }
+  },
+  "cc33dd44": {
+    "N Gene": {
+      "category": "low",
+      "method": "commonly detected",
+      "details": {
+        "trend": {
+          "m": -2.8,
+          "p": 0.014,
+          "significant": true
+        },
+        "tertile": 1
+      },
+      "lastSampleDate": "2026-08-05"
+    }
+  }
+}

@@ -12,6 +12,10 @@
 # Data source: the dashboard at data.wastewaterscan.org is a static site that
 # reads per-plant JSON straight from a public Google Cloud Storage bucket. We
 # read the same file. See README for how to re-derive the URL if it moves.
+#
+# It also reads a second, much smaller file of per-plant verdicts -- level and
+# trend, already decided. We read that one too rather than deciding either
+# ourselves; see fetch_wwscan_categories() and wwscan_published_status().
 
 # Public JSON the WastewaterSCAN dashboard itself fetches.
 WWSCAN_JSON_BASE <- "https://storage.googleapis.com/wastewater-dev-data/json/"
@@ -31,17 +35,38 @@ WWSCAN_CSV_PATH <- "data/processed/wwscan_covid.csv"
 WWSCAN_PMMOV_SCALE <- 1e6
 
 # National 33rd/66th percentile cutoffs for the N Gene target, in the scaled
-# units above. WastewaterSCAN uses these to label a site's current level as
-# low / medium / high -- the word shown next to "SARS-CoV-2" on its overview
-# page. The values are baked into the dashboard's JavaScript bundle rather than
+# units above. These are NOT the source of the headline level any more -- that
+# comes from WastewaterSCAN's own published tertile band. They remain here for
+# the two jobs the published band can't do: drawing the low/medium and
+# medium/high lines on our chart, and labelling every historical row in the
+# CSV. The values are baked into the dashboard's JavaScript bundle rather than
 # served as data, so they are copied here; see README for how to re-check them.
 WWSCAN_TERTILE_33 <- 20.331799376770654
 WWSCAN_TERTILE_66 <- 105.40155394749259
 
-# Trailing window WastewaterSCAN uses for its trend statement, and the
-# significance level for the slope test.
+# Trailing window WastewaterSCAN uses for its trend statement. We no longer run
+# a significance test of our own (see wwscan_published_status), but the window
+# still defines the two 21-day averages behind the plain-language change line.
 WWSCAN_TREND_DAYS <- 21
-WWSCAN_TREND_ALPHA <- 0.05
+
+# WastewaterSCAN's own per-plant verdicts: the tertile band and the trend test
+# it ran (slope `m`, p-value `p`, and a `significant` flag). Its dashboard does
+# not compute either in the browser -- it reads this file and renders it. So
+# reading the same file is what actually guarantees our email agrees with their
+# site, which reimplementing the test never did.
+WWSCAN_CATEGORIES_URL <-
+  "https://data.wastewaterscan.org/data/categories/plants.json"
+
+# The categories file is keyed by the plant's short `uid` -- the first segment
+# of the UUID above, not the full id the per-plant JSON is named for.
+WWSCAN_BOSTON_PLANT_UID <- "b50c6424"
+
+# How far the 21-day average has to move before the headline names the
+# direction on a window WastewaterSCAN did NOT call significant. Roughly the
+# 25th percentile of this site's observed 21-day swings, so the flattest
+# quarter of windows still read as a plain "No trend" and the rest say which
+# way things moved while making clear it isn't a statistical trend.
+WWSCAN_NOTABLE_CHANGE_PCT <- 15
 
 #' URL of the per-plant JSON file
 #'
@@ -80,6 +105,40 @@ fetch_wwscan_plant <- function(plant_id = WWSCAN_BOSTON_PLANT_ID) {
 
     if (is.null(payload$samples) || length(payload$samples) == 0) {
       stop("WastewaterSCAN JSON has no samples -- the feed may have moved.")
+    }
+
+    payload
+  }, max_attempts = 3)
+}
+
+#' Fetch WastewaterSCAN's own per-plant level and trend verdicts
+#'
+#' The companion to fetch_wwscan_plant(): where that returns the measurements,
+#' this returns what WastewaterSCAN concluded from them. Routes through
+#' impersonate_fetch() for the same reasons -- single network entry point, one
+#' stub seam for tests.
+#'
+#' @param url Location of the categories file
+#' @return Named list keyed by plant uid, each holding one entry per target
+#' @details Stops if the response isn't a non-empty JSON object, which is the
+#'   signal the file has moved or changed shape.
+fetch_wwscan_categories <- function(url = WWSCAN_CATEGORIES_URL) {
+  json_path <- tempfile(fileext = ".json")
+  on.exit(unlink(json_path), add = TRUE)
+
+  with_retry(function() {
+    impersonate_fetch(url, output_path = json_path)
+
+    payload <- tryCatch(
+      jsonlite::read_json(json_path, simplifyVector = FALSE),
+      error = function(e) {
+        stop(sprintf("WastewaterSCAN categories were not valid JSON: %s",
+                     e$message))
+      }
+    )
+
+    if (!is.list(payload) || length(payload) == 0 || is.null(names(payload))) {
+      stop("WastewaterSCAN categories file is empty -- it may have moved.")
     }
 
     payload
@@ -134,9 +193,8 @@ extract_wwscan_target <- function(payload, target = WWSCAN_COVID_TARGET) {
     # Smoothed, PMMoV-normalized -- the line the dashboard draws.
     covid = wwscan_numeric_field(entries, "gc_g_dry_weight_trimmed5_pmmov") *
       WWSCAN_PMMOV_SCALE,
-    # Unsmoothed per-sample value, and its CI. The trend test uses this one:
-    # the smoothed series is autocorrelated by construction, so regressing on
-    # it would report a significant trend almost every week.
+    # Unsmoothed per-sample value, and its CI. Kept for the chart's scatter
+    # points and for anyone reading the CSV; nothing here regresses on it.
     covid_unsmoothed = wwscan_numeric_field(entries, "gc_g_dry_weight_pmmov") *
       WWSCAN_PMMOV_SCALE,
     lower_ci = wwscan_numeric_field(entries, "gc_g_dry_weight_pmmov_lci") *
@@ -172,54 +230,60 @@ wwscan_level <- function(value) {
   }
 }
 
-#' Test for a trend over the trailing window
+#' Translate WastewaterSCAN's tertile band into the word its dashboard shows
 #'
-#' Ordinary least squares of the unsmoothed concentration on date. A slope is
-#' called a trend only when its p-value clears `alpha`, which is why a series
-#' that drifts around without direction reports "No trend".
+#' @param tertile 1, 2, or 3 as published in the categories file
+#' @return "low", "medium", "high", or "unknown"
+wwscan_level_from_tertile <- function(tertile) {
+  if (is.null(tertile) || length(tertile) != 1 || is.na(tertile)) {
+    return("unknown")
+  }
+  switch(as.character(tertile),
+    "1" = "low",
+    "2" = "medium",
+    "3" = "high",
+    "unknown"
+  )
+}
+
+#' Read WastewaterSCAN's published level and trend for one plant and target
 #'
-#' @param data Data frame from extract_wwscan_target()
-#' @param days Length of the trailing window in days
-#' @param alpha Significance level for the slope
-#' @return List with direction ("up", "down", "none", "unknown"), description,
-#'   slope, p_value, and n (points in the window)
-wwscan_trend <- function(data, days = WWSCAN_TREND_DAYS,
-                         alpha = WWSCAN_TREND_ALPHA) {
-  unknown <- list(direction = "unknown", description = "Trend unavailable",
-                  slope = NA_real_, p_value = NA_real_, n = 0L)
+#' We do not decide either of these. WastewaterSCAN runs the trend test, and
+#' its dashboard renders the result straight out of the categories file --
+#' `details$trend$significant` picks between "Upward/Downward trend" and "No
+#' trend", `details$tertile` picks low/medium/high. This function reads the
+#' same two fields so our email repeats their verdict instead of offering a
+#' second opinion that can quietly disagree with it.
+#'
+#' @param categories Parsed list from fetch_wwscan_categories()
+#' @param uid Plant uid (see WWSCAN_BOSTON_PLANT_UID)
+#' @param target Assay name, e.g. "N Gene"
+#' @return List with level, direction ("up"/"down"/"none"/"unknown"),
+#'   significant, slope, p_value, as_of (the sample date the verdict covers),
+#'   method, and an `available` flag
+wwscan_published_status <- function(categories,
+                                    uid = WWSCAN_BOSTON_PLANT_UID,
+                                    target = WWSCAN_COVID_TARGET) {
+  # Missing keys chain to NULL rather than erroring, so an absent plant, an
+  # absent target, or an empty list all land on the same unavailable result.
+  entry <- categories[[uid]][[target]]
+  trend <- entry$details$trend
 
-  if (nrow(data) == 0 || all(is.na(data$date))) {
-    return(unknown)
-  }
+  slope <- if (is.null(trend$m)) NA_real_ else as.numeric(trend$m)
+  p_value <- if (is.null(trend$p)) NA_real_ else as.numeric(trend$p)
 
-  latest <- max(data$date, na.rm = TRUE)
-  # An NA in `date` would index NA rows into the window rather than dropping
-  # them, so it has to be excluded explicitly, not just compared against.
-  # Half-open window (latest - days, latest], matching wwscan_window_mean(),
-  # so the trend and the change sentence describe the same "last 21 days".
-  keep <- !is.na(data$date) & data$date > latest - days &
-    !is.na(data$covid_unsmoothed)
-  window <- data[keep, ]
+  # A target WastewaterSCAN hasn't calculated carries a message where the
+  # trend would be, so a missing flag is an expected state, not a parse bug.
+  significant <- if (is.null(trend$significant)) NA else isTRUE(trend$significant)
 
-  # Three points is the minimum that leaves a residual degree of freedom.
-  if (nrow(window) < 3) {
-    return(unknown)
-  }
-
-  fit <- stats::lm(covid_unsmoothed ~ as.numeric(date), data = window)
-  coefs <- summary(fit)$coefficients
-
-  # A window where every value is identical yields no slope row at all.
-  if (nrow(coefs) < 2) {
-    return(unknown)
-  }
-
-  slope <- coefs[2, 1]
-  p_value <- coefs[2, 4]
-  significant <- !is.na(p_value) && p_value < alpha
-
-  direction <- if (!significant) {
+  direction <- if (is.na(significant)) {
+    "unknown"
+  } else if (!significant) {
     "none"
+  } else if (is.na(slope)) {
+    # Called significant with no slope to point anywhere: report nothing
+    # rather than guess a direction.
+    "unknown"
   } else if (slope > 0) {
     "up"
   } else {
@@ -227,16 +291,85 @@ wwscan_trend <- function(data, days = WWSCAN_TREND_DAYS,
   }
 
   list(
+    level = wwscan_level_from_tertile(entry$details$tertile),
     direction = direction,
-    description = switch(direction,
-      up = "Upward trend",
-      down = "Downward trend",
-      "No trend"
-    ),
+    significant = significant,
     slope = slope,
     p_value = p_value,
-    n = nrow(window)
+    as_of = if (is.null(entry$lastSampleDate)) as.Date(NA)
+            else as.Date(entry$lastSampleDate),
+    method = if (is.null(entry$method)) NA_character_ else as.character(entry$method),
+    available = direction != "unknown"
   )
+}
+
+#' How WastewaterSCAN's trend test came out, in one clause
+#'
+#' Goes in the notification body so the significance claim is auditable
+#' without opening their site.
+#'
+#' @param status List from wwscan_published_status()
+#' @return Character scalar
+wwscan_trend_detail <- function(status) {
+  if (!status$available) {
+    return("not available from WastewaterSCAN")
+  }
+
+  p_text <- if (is.na(status$p_value)) "" else sprintf(" (p = %.2f)", status$p_value)
+
+  if (isTRUE(status$significant)) {
+    sprintf("significant %s slope%s",
+            if (status$direction == "up") "upward" else "downward", p_text)
+  } else {
+    sprintf("not statistically significant%s", p_text)
+  }
+}
+
+#' Build the headline sentence
+#'
+#' Keeps the shape of WastewaterSCAN's own line -- "<trend> in the last 21 days
+#' and <level> concentration" -- so the two read as the same statement. The one
+#' place we say more than they do is a window they did not call significant but
+#' where the 21-day average clearly moved: "No trend" on its own reads as
+#' "levels are flat", which is not what a non-significant slope means, and it
+#' contradicted the change figure printed directly underneath it.
+#'
+#' @param status List from wwscan_published_status()
+#' @param pct_change Percent change between the two 21-day windows
+#' @param level Level word to use; defaults to the published one, but callers
+#'   may pass a fallback for the case where only the band couldn't be read
+#' @return Character scalar, with no trailing period (callers append one)
+wwscan_headline <- function(status, pct_change, level = status$level) {
+  level_clause <- sprintf("%s concentration", level)
+
+  if (!status$available) {
+    return(sprintf("WastewaterSCAN trend not available; %s", level_clause))
+  }
+
+  if (status$direction %in% c("up", "down")) {
+    return(sprintf(
+      "%s in the last %d days and %s",
+      if (status$direction == "up") "Upward trend" else "Downward trend",
+      WWSCAN_TREND_DAYS, level_clause
+    ))
+  }
+
+  # Compare the number the reader will actually see, not the unrounded one:
+  # a 14.6% change prints as "up 15%" in the change line underneath, and a
+  # headline saying "No trend" next to that is the mismatch this whole
+  # rewording exists to remove.
+  shown_change <- if (is.na(pct_change)) NA_real_ else
+    as.numeric(sprintf("%.0f", abs(pct_change)))
+
+  if (!is.na(shown_change) && shown_change >= WWSCAN_NOTABLE_CHANGE_PCT) {
+    return(sprintf(
+      "%s %.0f%% in the last %d days (not a statistically significant trend) and %s",
+      if (pct_change > 0) "Up" else "Down", shown_change,
+      WWSCAN_TREND_DAYS, level_clause
+    ))
+  }
+
+  sprintf("No trend in the last %d days and %s", WWSCAN_TREND_DAYS, level_clause)
 }
 
 #' Mean of the trailing window, for a plain-language change figure
@@ -256,12 +389,14 @@ wwscan_window_mean <- function(data, end, days = WWSCAN_TREND_DAYS) {
 
 #' Build the summary used by notifications and the dashboard
 #'
-#' The headline sentence deliberately copies WastewaterSCAN's own wording so
-#' an email and its site never appear to disagree.
+#' Pairs our own measurements with WastewaterSCAN's verdict on them: the
+#' 21-day averages and their percent change are computed here, the level and
+#' trend are theirs.
 #'
 #' @param data Data frame from extract_wwscan_target()
+#' @param status List from wwscan_published_status()
 #' @return List of summary values, including a ready-to-send `headline`
-wwscan_summary <- function(data) {
+wwscan_summary <- function(data, status) {
   if (nrow(data) == 0 || all(is.na(data$date))) {
     stop("No WastewaterSCAN data to summarize.")
   }
@@ -271,8 +406,14 @@ wwscan_summary <- function(data) {
   latest_row <- data[which.max(data$date), ]
   latest_date <- latest_row$date
   latest_value <- latest_row$covid
-  level <- wwscan_level(latest_value)
-  trend <- wwscan_trend(data)
+
+  # Their published band is the headline level. Classifying the latest value
+  # against the copied cutoffs is only a fallback for when the categories file
+  # can't be read -- it's a lookup against published numbers, not a second
+  # opinion on the trend, and `status` is left holding exactly what they said.
+  from_them <- status$level != "unknown"
+  level <- if (from_them) status$level else wwscan_level(latest_value)
+  level_source <- if (from_them) "wastewaterscan" else "local cutoffs"
 
   recent_mean <- wwscan_window_mean(data, latest_date)
   prior_mean <- wwscan_window_mean(data, latest_date - WWSCAN_TREND_DAYS)
@@ -286,15 +427,13 @@ wwscan_summary <- function(data) {
     latest_date = latest_date,
     latest_value = latest_value,
     level = level,
-    trend = trend,
+    level_source = level_source,
+    trend = status,
     recent_mean = recent_mean,
     prior_mean = prior_mean,
     pct_change = pct_change,
     n_samples = nrow(data),
-    headline = sprintf(
-      "%s in the last %d days and %s concentration",
-      trend$description, WWSCAN_TREND_DAYS, level
-    )
+    headline = wwscan_headline(status, pct_change, level)
   )
 }
 
@@ -342,8 +481,13 @@ save_wwscan_data <- function(data, path = WWSCAN_CSV_PATH) {
 
 #' Write the summary the dashboard displays
 #'
-#' The dashboard shows the level and trend sentence rather than recomputing
-#' them, so the tertile cutoffs and the slope test live in exactly one place.
+#' The dashboard renders this rather than recomputing anything, so the
+#' headline our page shows and the one the notification email carries are
+#' byte-for-byte the same sentence.
+#'
+#' The trend fields are recorded alongside it so a surprising headline can be
+#' checked against the numbers WastewaterSCAN actually published, rather than
+#' taken on faith.
 #'
 #' @param summary_info List from wwscan_summary()
 #' @param path Output path for the JSON
@@ -354,17 +498,32 @@ save_wwscan_summary <- function(summary_info, path = "docs/data/wwscan_summary.j
     dir.create(dir_path, recursive = TRUE)
   }
 
+  trend <- summary_info$trend
+
   payload <- list(
     latest_date = format(summary_info$latest_date, "%Y-%m-%d"),
     latest_value = round(summary_info$latest_value, 1),
     level = summary_info$level,
-    trend = summary_info$trend$direction,
+    level_source = summary_info$level_source,
+    trend = trend$direction,
+    trend_significant = trend$significant,
+    trend_p = if (is.na(trend$p_value)) NULL else round(trend$p_value, 4),
+    trend_slope = if (is.na(trend$slope)) NULL else trend$slope,
+    trend_as_of = if (is.na(trend$as_of)) NULL else format(trend$as_of, "%Y-%m-%d"),
+    trend_source = if (trend$available) "wastewaterscan" else "unavailable",
+    change_pct = if (is.na(summary_info$pct_change)) NULL else
+      round(summary_info$pct_change),
     headline = summary_info$headline,
     change_text = wwscan_change_sentence(summary_info),
     tertile_33 = WWSCAN_TERTILE_33,
     tertile_66 = WWSCAN_TERTILE_66,
     generated = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
   )
+
+  # jsonlite writes a NULL element as `{}` and a numeric NA as the string
+  # "NA", so drop the fields that have no value instead of emitting either.
+  # A logical NA is fine -- that one becomes a real JSON null.
+  payload <- Filter(Negate(is.null), payload)
 
   jsonlite::write_json(payload, path, auto_unbox = TRUE, pretty = TRUE)
   invisible(path)

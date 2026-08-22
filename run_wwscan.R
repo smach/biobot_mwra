@@ -119,9 +119,38 @@ if (inherits(payload, "error")) {
     message("  Copied data to docs/data/")
     message("")
 
-    # Step 4: Summarize the trend
-    message("Step 4: Summarizing trend...")
-    info <- wwscan_summary(covid)
+    # Step 4: Read WastewaterSCAN's own level and trend, then summarize
+    message("Step 4: Reading WastewaterSCAN's published level and trend...")
+
+    # A failure here is not fatal: the measurements are already written and the
+    # chart is still worth publishing. But it must never fall back to a trend
+    # of our own invention, so the headline says the trend is unavailable and
+    # the log says why.
+    categories <- tryCatch(fetch_wwscan_categories(), error = function(e) e)
+
+    if (inherits(categories, "error")) {
+      message("  WARNING: could not read the categories file: ",
+              conditionMessage(categories))
+      message("  The headline will report the trend as unavailable.")
+      categories <- list()
+    }
+
+    status <- wwscan_published_status(categories)
+
+    if (status$available) {
+      message("  WastewaterSCAN says: ", status$direction,
+              " / ", wwscan_trend_detail(status))
+      # Their verdict is published per sample date. If it lags the feed we'd be
+      # pairing a fresh number with a stale judgement, so say so out loud.
+      if (!is.na(status$as_of) && status$as_of != latest_date) {
+        message("  NOTE: their trend covers ", status$as_of,
+                " but our newest sample is ", latest_date)
+      }
+    } else {
+      message("  WastewaterSCAN has no usable trend for ", WWSCAN_COVID_TARGET)
+    }
+
+    info <- wwscan_summary(covid, status)
     change_text <- wwscan_change_sentence(info)
 
     message("  ", info$headline)
@@ -141,6 +170,7 @@ if (inherits(payload, "error")) {
     set_gha_output("headline", info$headline)
     set_gha_output("level", info$level)
     set_gha_output("trend_direction", info$trend$direction)
+    set_gha_output("trend_detail", wwscan_trend_detail(info$trend))
     set_gha_output("latest_value", sprintf("%.1f", info$latest_value))
     set_gha_output("change_text", change_text)
 
