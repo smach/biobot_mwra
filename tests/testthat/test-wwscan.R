@@ -1,10 +1,19 @@
 # Tests for R/05_wwscan.R
 #
-# The fixture is a trimmed copy of the real Boston/Deer Island feed (last 30
-# samples, N Gene and PMMoV targets only). Its newest sample is 2026-08-05,
-# the same day the WastewaterSCAN dashboard reported "SARS-CoV-2 Medium / No
-# trend in the last 21 days and medium concentration" -- so the summary tests
-# below double as a check that we still reproduce the dashboard's own wording.
+# Two fixtures, mirroring the two files the dashboard reads:
+#
+#   wwscan_boston.json     a trimmed copy of the real Boston/Deer Island feed
+#                          (last 30 samples, N Gene and PMMoV targets only),
+#                          newest sample 2026-08-05
+#   wwscan_categories.json WastewaterSCAN's own verdicts in their real shape,
+#                          with the Boston entry dated to match the feed
+#                          fixture, plus two invented sites that carry a
+#                          significant rise and a significant fall so those
+#                          branches get exercised against real field names
+#
+# Nothing here re-tests a significance calculation, because we no longer make
+# one: the point of these tests is that we read WastewaterSCAN's verdict
+# faithfully and never substitute one of our own.
 
 # Stub impersonate_fetch so it "downloads" a local file, and run with_retry's
 # closure exactly once. Restores both when the calling frame exits.
@@ -31,6 +40,16 @@ local_wwscan_stubs <- function(source_file, frame = parent.frame()) {
 fixture_payload <- function() {
   jsonlite::read_json(test_fixture_path("wwscan_boston.json"),
                       simplifyVector = FALSE)
+}
+
+fixture_categories <- function() {
+  jsonlite::read_json(test_fixture_path("wwscan_categories.json"),
+                      simplifyVector = FALSE)
+}
+
+# The Boston status the two fixtures agree on: medium, not significant.
+fixture_status <- function() {
+  wwscan_published_status(fixture_categories())
 }
 
 describe("wwscan_plant_url()", {
@@ -154,95 +173,205 @@ describe("wwscan_level()", {
   })
 })
 
-describe("wwscan_trend()", {
-  # Helper: build a data frame ending today-ish with the given values spaced
-  # every other day, matching WastewaterSCAN's real sampling cadence.
-  trend_data <- function(values) {
-    n <- length(values)
-    data.frame(
-      date = as.Date("2026-08-05") - rev(seq(0, by = 2, length.out = n)),
-      covid = values,
-      covid_unsmoothed = values
-    )
+describe("fetch_wwscan_categories()", {
+  it("parses the categories file keyed by plant uid", {
+    local_wwscan_stubs(test_fixture_path("wwscan_categories.json"))
+
+    result <- fetch_wwscan_categories()
+
+    expect_true(WWSCAN_BOSTON_PLANT_UID %in% names(result))
+    expect_false(is.null(result[[WWSCAN_BOSTON_PLANT_UID]][["N Gene"]]))
+  })
+
+  it("errors when the response is not JSON", {
+    not_json <- withr::local_tempfile(fileext = ".html")
+    writeLines("<html><body>Nope</body></html>", not_json)
+    local_wwscan_stubs(not_json)
+
+    expect_error(fetch_wwscan_categories(), "not valid JSON")
+  })
+
+  it("errors when the file is an empty object", {
+    empty <- withr::local_tempfile(fileext = ".json")
+    writeLines("{}", empty)
+    local_wwscan_stubs(empty)
+
+    expect_error(fetch_wwscan_categories(), "empty")
+  })
+})
+
+describe("wwscan_level_from_tertile()", {
+  it("maps the published band to the dashboard's word", {
+    expect_equal(wwscan_level_from_tertile(1), "low")
+    expect_equal(wwscan_level_from_tertile(2), "medium")
+    expect_equal(wwscan_level_from_tertile(3), "high")
+  })
+
+  it("returns unknown for a missing or unexpected band", {
+    expect_equal(wwscan_level_from_tertile(NULL), "unknown")
+    expect_equal(wwscan_level_from_tertile(NA), "unknown")
+    expect_equal(wwscan_level_from_tertile(9), "unknown")
+  })
+})
+
+describe("wwscan_published_status()", {
+  it("reports WastewaterSCAN's verdict rather than judging for itself", {
+    status <- fixture_status()
+
+    expect_equal(status$level, "medium")
+    expect_equal(status$direction, "none")
+    expect_false(status$significant)
+    # Their numbers, carried through untouched.
+    expect_equal(round(status$p_value, 4), 0.5466)
+    expect_equal(round(status$slope, 4), 0.114)
+    expect_equal(status$as_of, as.Date("2026-08-05"))
+    expect_true(status$available)
+  })
+
+  it("calls a significant positive slope an upward trend", {
+    status <- wwscan_published_status(fixture_categories(), uid = "aa11bb22")
+
+    expect_equal(status$direction, "up")
+    expect_true(status$significant)
+    expect_equal(status$level, "high")
+  })
+
+  it("calls a significant negative slope a downward trend", {
+    status <- wwscan_published_status(fixture_categories(), uid = "cc33dd44")
+
+    expect_equal(status$direction, "down")
+    expect_equal(status$level, "low")
+  })
+
+  it("is unavailable for a target they have not calculated", {
+    status <- wwscan_published_status(fixture_categories(), target = "S Gene")
+
+    expect_false(status$available)
+    expect_equal(status$direction, "unknown")
+    expect_true(is.na(status$significant))
+  })
+
+  it("is unavailable for a target scored by the seasonal method", {
+    # RSV carries onset fields where the trend would be; nothing to read.
+    status <- wwscan_published_status(fixture_categories(), target = "RSV")
+
+    expect_false(status$available)
+    expect_equal(status$direction, "unknown")
+  })
+
+  it("is unavailable for an unknown plant, without erroring", {
+    status <- wwscan_published_status(fixture_categories(), uid = "nosuchid")
+
+    expect_false(status$available)
+    expect_equal(status$level, "unknown")
+  })
+
+  it("is unavailable when the categories file could not be read at all", {
+    status <- wwscan_published_status(list())
+
+    expect_false(status$available)
+    expect_equal(status$direction, "unknown")
+    expect_true(is.na(status$p_value))
+  })
+})
+
+describe("wwscan_headline()", {
+  significant_up <- function() {
+    wwscan_published_status(fixture_categories(), uid = "aa11bb22")
   }
 
-  it("reports an upward trend when values climb", {
-    result <- wwscan_trend(trend_data(c(10, 19, 31, 39, 52, 59, 71)))
-
-    expect_equal(result$direction, "up")
-    expect_equal(result$description, "Upward trend")
-    expect_true(result$slope > 0)
-    expect_true(result$p_value < 0.05)
-  })
-
-  it("reports a downward trend when values fall", {
-    result <- wwscan_trend(trend_data(c(71, 59, 52, 39, 31, 19, 10)))
-
-    expect_equal(result$direction, "down")
-    expect_equal(result$description, "Downward trend")
-    expect_true(result$slope < 0)
-  })
-
-  it("reports no trend when noisy values have no direction", {
-    result <- wwscan_trend(trend_data(c(50, 45, 55, 48, 52, 47, 53)))
-
-    expect_equal(result$direction, "none")
-    expect_equal(result$description, "No trend")
-    expect_true(result$p_value > 0.05)
-  })
-
-  it("only considers samples inside the trailing window", {
-    old <- data.frame(
-      date = as.Date(c("2026-01-01", "2026-01-03", "2026-01-05")),
-      covid = c(1000, 1100, 1200),
-      covid_unsmoothed = c(1000, 1100, 1200)
+  it("uses WastewaterSCAN's own wording when they call it a trend", {
+    expect_equal(
+      wwscan_headline(significant_up(), 40),
+      "Upward trend in the last 21 days and high concentration"
     )
-    recent <- trend_data(c(50, 45, 55, 48, 52, 47, 53))
-
-    result <- wwscan_trend(rbind(old, recent))
-
-    # The January spike is far outside 21 days, so it must not sway the slope.
-    expect_equal(result$n, 7)
-    expect_equal(result$direction, "none")
   })
 
-  it("returns unknown when the window has too few points", {
-    result <- wwscan_trend(trend_data(c(40, 60)))
-
-    expect_equal(result$direction, "unknown")
-    expect_equal(result$description, "Trend unavailable")
+  it("names the change and says it isn't significant when they don't", {
+    expect_equal(
+      wwscan_headline(fixture_status(), 31.4),
+      paste("Up 31% in the last 21 days (not a statistically significant",
+            "trend) and medium concentration")
+    )
   })
 
-  it("returns unknown for an empty data frame", {
-    empty <- data.frame(date = as.Date(character(0)), covid = numeric(0),
-                        covid_unsmoothed = numeric(0))
-    expect_equal(wwscan_trend(empty)$direction, "unknown")
+  it("says which way a non-significant fall went", {
+    expect_match(wwscan_headline(fixture_status(), -28), "^Down 28%")
   })
 
-  it("drops rows with a missing date instead of indexing NA rows", {
-    data <- trend_data(c(50, 45, 55, 48, 52, 47, 53))
-    data$date[3] <- NA
+  it("still says plain 'No trend' when the average barely moved", {
+    expect_equal(
+      wwscan_headline(fixture_status(), 4),
+      "No trend in the last 21 days and medium concentration"
+    )
+  })
 
-    result <- wwscan_trend(data)
+  it("never contradicts the rounded change figure shown underneath", {
+    # 14.6% prints as "up 15%" in the change sentence, so the headline has to
+    # treat it as 15 too -- the mismatch that prompted this rewrite.
+    expect_match(wwscan_headline(fixture_status(), 14.6), "^Up 15%")
+    expect_match(wwscan_headline(fixture_status(), 14.4), "^No trend")
+  })
 
-    expect_equal(result$n, 6)
-    expect_false(is.na(result$p_value))
+  it("says so plainly when their trend can't be read", {
+    expect_equal(
+      wwscan_headline(wwscan_published_status(list()), 31, level = "medium"),
+      "WastewaterSCAN trend not available; medium concentration"
+    )
+  })
+
+  it("tolerates a missing change figure", {
+    expect_equal(
+      wwscan_headline(fixture_status(), NA_real_),
+      "No trend in the last 21 days and medium concentration"
+    )
+  })
+})
+
+describe("wwscan_trend_detail()", {
+  it("reports their p-value for a non-significant window", {
+    expect_equal(wwscan_trend_detail(fixture_status()),
+                 "not statistically significant (p = 0.55)")
+  })
+
+  it("names the direction for a significant one", {
+    status <- wwscan_published_status(fixture_categories(), uid = "aa11bb22")
+    expect_match(wwscan_trend_detail(status), "significant upward slope")
+  })
+
+  it("says when there is nothing to report", {
+    expect_equal(wwscan_trend_detail(wwscan_published_status(list())),
+                 "not available from WastewaterSCAN")
   })
 })
 
 describe("wwscan_summary()", {
-  it("reproduces the wording the dashboard showed for this data", {
-    info <- wwscan_summary(extract_wwscan_target(fixture_payload()))
+  it("takes the level and trend from WastewaterSCAN", {
+    info <- wwscan_summary(extract_wwscan_target(fixture_payload()),
+                           fixture_status())
 
     expect_equal(info$latest_date, as.Date("2026-08-05"))
     expect_equal(info$level, "medium")
+    expect_equal(info$level_source, "wastewaterscan")
     expect_equal(info$trend$direction, "none")
-    expect_equal(info$headline,
-                 "No trend in the last 21 days and medium concentration")
+    expect_false(info$trend$significant)
+  })
+
+  it("names the rise the change figure shows instead of calling it flat", {
+    info <- wwscan_summary(extract_wwscan_target(fixture_payload()),
+                           fixture_status())
+
+    # The old headline said "No trend" here while the line underneath said
+    # "up 15%". Both now describe the same movement.
+    expect_match(info$headline, "^Up 15% in the last 21 days")
+    expect_match(info$headline, "not a statistically significant trend",
+                 fixed = TRUE)
+    expect_match(wwscan_change_sentence(info), "up 15%", fixed = TRUE)
   })
 
   it("compares the trailing window with the one before it", {
-    info <- wwscan_summary(extract_wwscan_target(fixture_payload()))
+    info <- wwscan_summary(extract_wwscan_target(fixture_payload()),
+                           fixture_status())
 
     expect_false(is.na(info$recent_mean))
     expect_false(is.na(info$prior_mean))
@@ -250,20 +379,92 @@ describe("wwscan_summary()", {
                  100 * (info$recent_mean - info$prior_mean) / info$prior_mean)
   })
 
+  it("falls back to the copied cutoffs only for the level, never the trend", {
+    info <- wwscan_summary(extract_wwscan_target(fixture_payload()),
+                           wwscan_published_status(list()))
+
+    # Latest value is 65.4, between the two cutoffs.
+    expect_equal(info$level, "medium")
+    expect_equal(info$level_source, "local cutoffs")
+    expect_equal(info$trend$direction, "unknown")
+    expect_match(info$headline, "trend not available", fixed = TRUE)
+  })
+
   it("errors on an empty data frame", {
     empty <- data.frame(date = as.Date(character(0)), covid = numeric(0),
                         covid_unsmoothed = numeric(0))
-    expect_error(wwscan_summary(empty), "No WastewaterSCAN data")
+    expect_error(wwscan_summary(empty, fixture_status()),
+                 "No WastewaterSCAN data")
   })
 
   it("finds the newest sample even when rows arrive out of order", {
     ordered <- extract_wwscan_target(fixture_payload())
     shuffled <- ordered[c(10, 30, 1, 25, 5, seq_len(nrow(ordered))[-c(1, 5, 10, 25, 30)]), ]
 
-    info <- wwscan_summary(shuffled)
+    info <- wwscan_summary(shuffled, fixture_status())
 
     expect_equal(info$latest_date, as.Date("2026-08-05"))
     expect_equal(info$level, "medium")
+  })
+})
+
+describe("save_wwscan_summary()", {
+  it("records the trend numbers their site published", {
+    path <- file.path(withr::local_tempdir(), "wwscan_summary.json")
+    info <- wwscan_summary(extract_wwscan_target(fixture_payload()),
+                           fixture_status())
+
+    save_wwscan_summary(info, path)
+    written <- jsonlite::read_json(path)
+
+    expect_equal(written$trend, "none")
+    expect_false(written$trend_significant)
+    expect_equal(written$trend_p, 0.5466)
+    expect_equal(written$trend_source, "wastewaterscan")
+    expect_equal(written$trend_as_of, "2026-08-05")
+    expect_equal(written$headline, info$headline)
+  })
+
+  it("keeps every field the email script on the server requires", {
+    # That script lives outside this repo and fetches this file from main. It
+    # hard-fails on a missing field, and nothing else spans the boundary, so
+    # this is the only place a rename gets caught before the emails break.
+    required <- c("latest_date", "level", "trend", "headline", "change_text")
+
+    path <- file.path(withr::local_tempdir(), "wwscan_summary.json")
+    info <- wwscan_summary(extract_wwscan_target(fixture_payload()),
+                           fixture_status())
+    save_wwscan_summary(info, path)
+
+    expect_true(all(required %in% names(jsonlite::read_json(path))))
+  })
+
+  it("keeps those fields even when the trend is unavailable", {
+    required <- c("latest_date", "level", "trend", "headline", "change_text")
+
+    path <- file.path(withr::local_tempdir(), "wwscan_summary.json")
+    info <- wwscan_summary(extract_wwscan_target(fixture_payload()),
+                           wwscan_published_status(list()))
+    save_wwscan_summary(info, path)
+
+    expect_true(all(required %in% names(jsonlite::read_json(path))))
+  })
+
+  it("omits absent numbers rather than writing {} or the string NA", {
+    path <- file.path(withr::local_tempdir(), "wwscan_summary.json")
+    info <- wwscan_summary(extract_wwscan_target(fixture_payload()),
+                           wwscan_published_status(list()))
+
+    save_wwscan_summary(info, path)
+
+    written <- jsonlite::read_json(path)
+    expect_null(written$trend_p)
+    expect_null(written$trend_slope)
+    expect_equal(written$trend_source, "unavailable")
+
+    raw <- paste(readLines(path), collapse = "")
+    expect_false(grepl('"NA"', raw, fixed = TRUE))
+    expect_false(grepl("{}", raw, fixed = TRUE))
   })
 })
 

@@ -68,6 +68,22 @@ about 2.4 million people).
 change sentence. It exists so the dashboard and the email script display the
 same numbers instead of each recomputing them.
 
+| Field | Description |
+|-------|-------------|
+| `headline` | The sentence both the dashboard and the notification show |
+| `level` | `low` / `medium` / `high`, from WastewaterSCAN's published tertile band |
+| `level_source` | `wastewaterscan`, or `local cutoffs` if their file couldn't be read |
+| `trend` | `up` / `down` / `none` / `unknown` — WastewaterSCAN's verdict, not ours |
+| `trend_significant` | Their `significant` flag |
+| `trend_p` / `trend_slope` | Their p-value and slope; omitted when unavailable |
+| `trend_as_of` | The sample date their verdict covers |
+| `trend_source` | `wastewaterscan` or `unavailable` |
+| `change_pct` | Rounded percent change between the two 21-day averages |
+| `tertile_33` / `tertile_66` | Cutoffs for the chart's threshold lines |
+
+The trend fields are recorded so a surprising headline can be checked against
+what WastewaterSCAN actually published, instead of taken on faith.
+
 ### Source PDF
 
 The original data from MWRA is stored at `data/latest_data.pdf`. This PDF contains the most recent raw tables and charts published by MWRA/Biobot.
@@ -136,38 +152,85 @@ it daily and files a GitHub issue whenever there's a new sample.
 
 ### Where the data actually comes from
 
-`data.wastewaterscan.org` is a static site that reads per-plant JSON straight
-from a public Google Cloud Storage bucket. This pipeline reads the same file:
+`data.wastewaterscan.org` is a static site that reads its data straight from
+public buckets. This pipeline reads the same two files.
+
+**The measurements**, per plant:
 
 ```
 https://storage.googleapis.com/wastewater-dev-data/json/b50c6424-02d1-482f-b928-dbed1d7eab25.json
 ```
 
-That is an internal endpoint, not a documented API, and the bucket is named
-`wastewater-dev-data` — it could move without notice. **If it ever 404s or stops
-returning JSON, the run fails loudly** rather than quietly going stale. To
-re-derive the URL: load the dashboard, look through its `/_nuxt/*.js` bundles for
-`storage.googleapis.com`, and find the `plants.json` / per-plant URL builders.
-`plants.json` also lets you look the Deer Island plant ID up again by name.
+**The verdicts** — level and trend, already decided, for every plant and target:
 
-### How the level and trend are calculated
+```
+https://data.wastewaterscan.org/data/categories/plants.json
+```
 
-Both deliberately mirror what the WastewaterSCAN dashboard itself reports, so
-an email and their site never appear to contradict each other:
+Both are internal endpoints, not documented APIs, and the measurements bucket is
+named `wastewater-dev-data` — either could move without notice. **If the
+measurements feed 404s or stops returning JSON, the run fails loudly** rather
+than quietly going stale. A failure of the categories file is treated as
+non-fatal (the chart is still worth publishing) but the headline then says the
+trend is unavailable; it never falls back to a trend of our own.
 
-- **Level** compares the latest smoothed value against national 33rd/66th
-  percentile cutoffs for the N Gene target (20.33 and 105.40 in these units).
-  Those cutoffs are hardcoded in the dashboard's JavaScript rather than served
-  as data, so they're copied into `R/05_wwscan.R` as constants. Re-check them
-  the same way you'd re-derive the URL above.
-- **Trend** is an ordinary least squares fit of the *unsmoothed* values over the
-  trailing 21 days, called a trend only when p < 0.05. The unsmoothed series
-  matters here: the smoothed one is autocorrelated by construction and would
-  report a significant trend nearly every week.
+To re-derive either URL: load the dashboard and look through its `/_nuxt/*.js`
+bundles — for the measurements, search `storage.googleapis.com` and find the
+`plants.json` / per-plant URL builders; for the verdicts, search
+`data/categories`. `plants.json` also lets you look the Deer Island plant ID up
+again by name.
 
-Verified against the dashboard on 2026-08-08, when it reported "SARS-CoV-2
-Medium / No trend in the last 21 days and medium concentration" — which is
-exactly what this code produces for the same data.
+### Where the level and trend come from
+
+**WastewaterSCAN decides both. We just read them.** Its dashboard doesn't
+compute either in the browser: it reads `details.trend.significant` and
+`details.tertile` out of the categories file and renders the sentence. So does
+`wwscan_published_status()` in `R/05_wwscan.R`. That's what actually guarantees
+our email agrees with their site.
+
+The Boston entry is keyed by the plant's short `uid`, `b50c6424` — the first
+segment of the UUID, not the full id the per-plant JSON is named for:
+
+```json
+"N Gene": {
+  "category": "medium", "method": "commonly detected",
+  "details": { "trend": { "m": 0.114, "p": 0.547, "significant": false },
+               "tertile": 2 },
+  "lastSampleDate": "2026-08-19"
+}
+```
+
+The 33rd/66th percentile cutoffs are still hardcoded in `R/05_wwscan.R`, but
+they no longer decide the headline level. They do two jobs the published band
+can't: drawing the threshold lines on our chart, and labelling every historical
+row in the CSV. They're also the fallback level if the categories file can't be
+read. Re-check them the same way you'd re-derive a URL above.
+
+> **This used to be reimplemented locally** — an OLS fit of the unsmoothed
+> values over 21 days at p < 0.05 — and it drifted from their result. For the
+> 2026-08-19 sample it produced p = 0.649 where WastewaterSCAN published
+> p = 0.547. Both said "not significant", so the disagreement stayed invisible,
+> but it was a second opinion pretending to be theirs. Don't reintroduce one.
+
+### What the headline says
+
+The shape follows WastewaterSCAN's own line — *"&lt;trend&gt; in the last 21 days and
+&lt;level&gt; concentration"* — with one addition. When their test is **not**
+significant but the 21-day average has clearly moved, the headline names the
+movement and says plainly that it isn't a statistical trend:
+
+> Up 31% in the last 21 days (not a statistically significant trend) and medium
+> concentration
+
+"No trend" on its own reads as "levels are flat", which is not what a
+non-significant slope means, and it directly contradicted the change figure
+printed underneath it. A plain "No trend" is now reserved for windows where the
+average really didn't move much — under `WWSCAN_NOTABLE_CHANGE_PCT` (15%,
+roughly the 25th percentile of this site's observed 21-day swings).
+
+The threshold compares the *rounded* percentage, the one the reader actually
+sees, so the headline and the change sentence can never disagree about whether
+something moved.
 
 ### Attribution and terms
 
