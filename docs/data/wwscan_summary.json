@@ -1,18 +1,18 @@
 {
-  "latest_date": "2026-08-24",
+  "latest_date": "2026-08-26",
   "latest_value": 0,
   "level": "low",
   "level_source": "wastewaterscan",
   "trend": "none",
   "trend_significant": false,
-  "trend_p": 0.9526,
-  "trend_slope": -0.0127,
-  "trend_as_of": "2026-08-24",
+  "trend_p": 0.7384,
+  "trend_slope": -0.065,
+  "trend_as_of": "2026-08-26",
   "trend_source": "wastewaterscan",
-  "change_pct": 4,
+  "change_pct": 12,
   "headline": "No trend in the last 21 days and low concentration",
-  "change_text": "The average of the last 21 days is 45 (up 4% from 43 over the previous 21 days).",
+  "change_text": "The average of the last 21 days is 48 (up 12% from 43 over the previous 21 days).",
   "tertile_33": 20.3318,
   "tertile_66": 105.4016,
-  "generated": "2026-08-27T22:19:10Z"
+  "generated": "2026-08-29T16:45:57Z"
 }
