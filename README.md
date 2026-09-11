@@ -269,31 +269,54 @@ Only the most recent PDF and CSV files are kept (overwritten on each update).
 
 ## GitHub Actions
 
-`check-data.yml` (MWRA Biobot, twice daily) and `check-wwscan.yml`
-(WastewaterSCAN, daily) both:
+`check-wwscan.yml` (WastewaterSCAN, daily) is the only data-checking workflow.
+It:
 
-1. Check for new data
-2. Process it
-3. Commit updated files
-4. Deploy the dashboard to GitHub Pages
-5. Create a GitHub Issue notification
+1. Checks for new data
+2. Processes it
+3. Commits updated files
+4. Deploys the dashboard to GitHub Pages
+5. Creates a GitHub Issue notification
 
-Both deploy jobs share a `pages` concurrency group so they can't deploy at the
-same time, and the WastewaterSCAN job rebases before pushing since both commit
-to `main`.
+`deploy-pages.yml` handles the other way the dashboard changes: any push to
+`main` that touches `docs/**`, plus a manual **Run workflow** button. Without
+it, a hand edit to `docs/index.html` would sit unpublished until the next new
+WastewaterSCAN sample happened to arrive, since that workflow's deploy job only
+fires when there's new data. Both deploy jobs share a `pages` concurrency group
+so they can't deploy at the same time.
+
+`check-data.yml`, which scraped MWRA Biobot data twice daily, was **deleted in
+September 2026** when Mass DPH ended the Biobot program. The scraper code and
+its historical data remain in the repo; see *The Biobot pipeline is retired*
+below.
+
+### The Biobot pipeline is retired
+
+Mass DPH ended its testing program with Biobot Analytics in July 2026 and is
+moving testing in-house. The last MWRA sample is **2026-07-27**, and there will
+be no more.
+
+Nothing in the repo scrapes MWRA any more, but nothing was deleted apart from
+the workflow. `run_monitor.R` and `R/01`-`R/04` still run if you source them,
+the tests still cover them, and the dashboard still charts the Biobot series as
+a closed historical record. The sections below about MWRA describe code that
+works but is no longer scheduled.
 
 ### When MWRA stops publishing
 
+*Historical — this ran in `check-data.yml`, which no longer exists.*
+
 A long publishing pause used to be invisible: the page loads, nothing is new,
 the run exits green, and nobody hears about it. That's exactly what happened in
-July 2026. Now, when MWRA's newest published sample passes 14 days old,
-`check-data.yml` opens a single `stale-data` issue and won't file another while
-it stays open. The scraper isn't broken in that situation, so the run itself
-still succeeds.
+July 2026, which turned out to be the program winding down rather than another
+pause. The fix was that when MWRA's newest published sample passed 14 days old,
+`check-data.yml` opened a single `stale-data` issue and wouldn't file another
+while it stayed open. `run_monitor.R` still emits the `data_stale` output that
+drove it; no workflow reads it now.
 
 ### Container-based runtime
 
-To keep runs reproducible, `check-data.yml` runs inside a prebuilt container
+To keep runs reproducible, `check-wwscan.yml` runs inside a prebuilt container
 image rather than installing R packages fresh on every run (fresh installs
 occasionally produced an `rlang.so: undefined symbol: SETLENGTH` crash). The
 image is defined by the `Dockerfile` (pinned R + packages from a dated Posit
@@ -302,12 +325,16 @@ pushed to the GitHub Container Registry by `.github/workflows/build-image.yml`,
 which only runs when the `Dockerfile` changes.
 
 > **First-time / after editing the Dockerfile:** the image must exist before
-> `check-data.yml` can run. On a merge that changes the `Dockerfile`, the
+> `check-wwscan.yml` can run. On a merge that changes the `Dockerfile`, the
 > scheduled check may fire before the image finishes building and fail to pull
 > it — this self-heals on the next run. To avoid the blip, run the **Build
 > container image** workflow (Actions → *Run workflow*) first.
 
 ### Handling MWRA's bot wall
+
+*Historical, but the machinery is still live:* `impersonate_fetch()` in
+`R/utils.R` is shared with the WastewaterSCAN pipeline and remains the only
+network entry point in the codebase.
 
 The MWRA site sits behind an Imperva bot challenge that intermittently serves a
 "please wait while we verify your request" page instead of the data.
@@ -330,8 +357,8 @@ or MWRA has stopped publishing — both deserve a look).
 ```
 biobot_mwra/
 ├── .github/workflows/
-│   ├── check-data.yml       # MWRA Biobot, twice daily
 │   ├── check-wwscan.yml     # WastewaterSCAN, daily
+│   ├── deploy-pages.yml     # republish docs/ on dashboard edits
 │   └── build-image.yml
 ├── Dockerfile
 ├── R/

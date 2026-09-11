@@ -1,0 +1,53 @@
+name: Deploy Dashboard to Pages
+
+# Republishes docs/ to GitHub Pages.
+#
+# This job used to live in check-data.yml, which was deleted when MWRA's
+# Biobot program ended. It is kept separate from check-wwscan.yml's own
+# deploy job because the two fire on different things: that one redeploys
+# after a new WastewaterSCAN sample lands, this one after a human edits the
+# dashboard. Without it, a hand edit to docs/index.html would sit unpublished
+# until the next new sample happened to arrive.
+on:
+  # Any hand edit to the dashboard or its data goes live on push.
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+
+  # Manual re-deploy, e.g. to republish after changing Pages settings.
+  workflow_dispatch:
+
+jobs:
+  deploy-pages:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    # Shared with check-wwscan.yml so the two workflows never deploy at once.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'docs'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

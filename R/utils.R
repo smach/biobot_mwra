@@ -55,8 +55,10 @@ update_state <- function(sample_date, pdf_url) {
 #' hard-fail alarm keys off this marker, not off `last_sample_date`, so it fires
 #' only when the bypass genuinely can't get through for a long stretch.
 #'
-#' Persisting across CI runs depends on the workflow committing `state/` on
-#' clean runs, not only on data updates -- see check-data.yml.
+#' Persisting across CI runs depended on the workflow committing `state/` on
+#' clean runs, not only on data updates. That workflow (check-data.yml) was
+#' deleted when the Biobot program ended, so this now matters only to manual
+#' runs of run_monitor.R -- but keep the behavior if you revive the pipeline.
 #'
 #' @return The updated state list
 record_successful_fetch <- function() {

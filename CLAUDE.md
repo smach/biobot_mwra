@@ -4,9 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-An R pipeline that scrapes MWRA's Biobot COVID wastewater PDF, extracts the data tables, writes CSVs, generates static plots, and updates a JS dashboard published to GitHub Pages. Runs once daily via GitHub Actions. State (the last known sample date and the last time the bot wall let us through) is committed to the repo, so runs are stateless between CI invocations.
+An R project tracking COVID levels in metro Boston wastewater. It writes CSVs and feeds a JS dashboard published to GitHub Pages.
 
-Since August 2026 there is a **second, parallel pipeline** (`run_wwscan.R` + `R/05_wwscan.R`) reading WastewaterSCAN's feed for the same Deer Island sewershed. It exists because MWRA's Biobot publishing stalled for 19 days in July 2026. The two pipelines share only `R/utils.R`; they have separate state files, CSVs, workflows, and charts.
+**The MWRA Biobot pipeline is retired.** Mass DPH ended its testing program with Biobot Analytics in July 2026 and is moving testing in-house. The last published sample is 2026-07-27, and there will be no more. `.github/workflows/check-data.yml` was deleted in September 2026, so nothing scrapes MWRA any longer.
+
+What stays: the scraper itself (`run_monitor.R`, `R/01`-`R/04`), its tests, `state/last_update.json`, and the historical CSVs. The dashboard still charts the Biobot series as a closed historical record, and the scripts still run by hand if the program is ever revived. **Everything below describing the Biobot pipeline describes code that still works but is no longer scheduled** - it runs only when you source it yourself.
+
+**The WastewaterSCAN pipeline (`run_wwscan.R` + `R/05_wwscan.R`) is the only live one.** It reads WastewaterSCAN's feed for the same Deer Island sewershed, and was added in August 2026 when MWRA's Biobot publishing stalled for 19 days - which turned out to be the beginning of the wind-down rather than another pause. It shares only `R/utils.R` with the Biobot code; separate state file, CSV, workflow, and charts.
 
 This is **not an R package** — there is no `DESCRIPTION` or `NAMESPACE`. Everything is plain scripts `source()`d into the global environment. That single fact drives most of the testing conventions below.
 
@@ -15,7 +19,8 @@ This is **not an R package** — there is no `DESCRIPTION` or `NAMESPACE`. Every
 Run from the repo root — every script uses paths relative to it.
 
 ```r
-# MWRA Biobot: check -> download -> extract -> visualize -> update dashboard data
+# MWRA Biobot (RETIRED - manual only, no longer runs in CI)
+# check -> download -> extract -> visualize -> update dashboard data
 source("run_monitor.R")
 
 # WastewaterSCAN: fetch -> extract -> CSV + summary JSON -> dashboard data
@@ -53,7 +58,7 @@ There is no build step and no linter configured.
 
 ## Architecture
 
-**Pipeline stages.** `run_monitor.R` sources and calls these in order; the numeric prefixes in `R/` are execution order, not just naming:
+**Pipeline stages (Biobot, retired).** `run_monitor.R` sources and calls these in order; the numeric prefixes in `R/` are execution order, not just naming. Kept because the code is still sourced by the test suite and still runs on demand:
 
 1. `R/01_check_updates.R` — `check_for_updates()` scrapes `mwra.com/biobot/biobotdata.htm` for the sample date and PDF link, compares against `state/last_update.json` to decide if data is new.
 2. `R/02_download_pdf.R` — `download_pdf()` fetches the PDF and validates the `%PDF-` magic bytes before accepting it.
@@ -65,15 +70,17 @@ There is no build step and no linter configured.
 
 **The MWRA bot wall is the central design constraint.** MWRA sits behind an Imperva/Incapsula challenge that intermittently serves an interstitial page instead of real content — to both the page scrape and the PDF download. `impersonate_fetch()` shells out to `curl-impersonate` (patched curl with a Chrome TLS fingerprint) rather than using httr2/libcurl, because plain libcurl traffic gets fingerprinted and blocked. `is_bot_challenge()` detects the interstitial by signature strings.
 
-A challenge is treated as a **transient no-op** — clean exit, no alarm — *unless* the bypass hasn't gotten a clean page load through the bot wall in `MAX_STALE_DAYS` (14, in `run_monitor.R`), in which case the run fails loudly. See `handle_challenge()` in `run_monitor.R` and `fetch_staleness_days()` in `R/utils.R`. Crucially, this is keyed off `last_successful_fetch` (when the bypass last worked), **not** off how old the *data* is: MWRA routinely pauses publishing for weeks with a healthy bypass — that pause is a separate, benign signal reported once via the `stale-data` issue (driven by `data_staleness_days()` / `last_sample_date`), and it must not turn every challenged run red. Any change to fetch or retry logic must preserve this three-way distinction: "challenged but bypass healthy, retry next run" vs "MWRA paused publishing, file one issue" vs "bypass genuinely shut out, wake a human." `last_successful_fetch` advances on any clean page load (new data or not) and `last_sample_date` only on a fully successful data run; both survive fresh CI checkouts because `check-data.yml` commits `state/` on clean runs, not only on data updates — a per-run counter would not.
+A challenge is treated as a **transient no-op** — clean exit, no alarm — *unless* the bypass hasn't gotten a clean page load through the bot wall in `MAX_STALE_DAYS` (14, in `run_monitor.R`), in which case the run fails loudly. See `handle_challenge()` in `run_monitor.R` and `fetch_staleness_days()` in `R/utils.R`. Crucially, this is keyed off `last_successful_fetch` (when the bypass last worked), **not** off how old the *data* is: MWRA routinely pauses publishing for weeks with a healthy bypass — that pause is a separate, benign signal reported once via the `stale-data` issue (driven by `data_staleness_days()` / `last_sample_date`), and it must not turn every challenged run red. Any change to fetch or retry logic must preserve this three-way distinction: "challenged but bypass healthy, retry next run" vs "MWRA paused publishing, file one issue" vs "bypass genuinely shut out, wake a human." `last_successful_fetch` advances on any clean page load (new data or not) and `last_sample_date` only on a fully successful data run; both survived fresh CI checkouts because `check-data.yml` committed `state/` on clean runs, not only on data updates — a per-run counter would not. With that workflow deleted this matters only to a manual run, or to anyone reviving the pipeline: keep the distinction intact if you touch fetch or retry logic, since `R/utils.R` is shared with the live WastewaterSCAN pipeline.
 
 **`impersonate_fetch()` is the only network entry point** in the codebase. Every network-touching test stubs it. Keep it that way; adding a second fetch path would silently escape both the challenge handling and the test seams.
 
-**Container-based CI.** `check-data.yml` installs nothing at run time — it executes inside a prebuilt image (`Dockerfile`, pushed to GHCR by `build-image.yml`, which triggers only on `Dockerfile` changes). The image pins `rocker/r-ver:4.4.2`, installs packages from a dated Posit Package Manager snapshot (`2026-06-02`), and bakes in curl-impersonate v0.6.1 / chrome116. This exists because fresh per-run installs intermittently produced an `rlang.so: undefined symbol: SETLENGTH` ABI crash. After editing the `Dockerfile`, manually run the **Build container image** workflow before the next scheduled check, or that run may fail pulling a stale image (self-heals on the following run).
+**Container-based CI.** `check-wwscan.yml` installs nothing at run time — it executes inside a prebuilt image (`Dockerfile`, pushed to GHCR by `build-image.yml`, which triggers only on `Dockerfile` changes). The image pins `rocker/r-ver:4.4.2`, installs packages from a dated Posit Package Manager snapshot (`2026-06-02`), and bakes in curl-impersonate v0.6.1 / chrome116. This exists because fresh per-run installs intermittently produced an `rlang.so: undefined symbol: SETLENGTH` ABI crash. After editing the `Dockerfile`, manually run the **Build container image** workflow before the next scheduled check, or that run may fail pulling a stale image (self-heals on the following run). The image still carries the Biobot pipeline's packages, since `run_monitor.R` has to stay runnable by hand.
 
-**Dashboard** (`docs/index.html`): a single self-contained HTML/CSS/JS file using ECharts 5.4.3 from CDN, calling `fetch('data/combined_data.csv')`. That `fetch` is why it needs a real web server locally. No build step. Deployed by the `deploy-pages` job in `check-data.yml`, which re-deploys `docs/` from `main` after `check-data`.
+**Dashboard** (`docs/index.html`): a single self-contained HTML/CSS/JS file using ECharts 5.4.3 from CDN, calling `fetch('data/combined_data.csv')` and `fetch('data/wwscan_covid.csv')`. That `fetch` is why it needs a real web server locally. No build step.
 
-**GitHub Actions handoff**: `run_monitor.R` writes `data_updated` and `sample_date` to `$GITHUB_OUTPUT` via `set_gha_output()`. `check-data.yml` gates the commit/push, issue creation, and artifact upload on those values. It also emits `fetch_ok` on any clean page load, which triggers a state-only commit so `last_successful_fetch` persists across CI checkouts (see the bot-wall paragraph above). `run_monitor.R` also emits `data_stale`/`stale_days` when MWRA has published nothing for over `MAX_STALE_DAYS`, which files one `stale-data` issue (guarded by an open-issue check, so it never repeats). Free-text outputs reach `github-script` through `env:`, never string interpolation.
+**Two workflows deploy Pages, and they are not redundant.** `check-wwscan.yml`'s `deploy-pages` job republishes after a new WastewaterSCAN sample lands; `deploy-pages.yml` republishes on any push to `main` touching `docs/**`, plus `workflow_dispatch`. The second exists because the first is gated on `data_updated == 'true'` — without it, a hand edit to the dashboard would sit unpublished until the next new sample happened to arrive. That job used to live in `check-data.yml` and was split out when that file was deleted. Both share `concurrency: group: pages` so they never deploy at once; keep that group name identical in both if you touch either.
+
+**GitHub Actions handoff**: both runners write outputs to `$GITHUB_OUTPUT` via `set_gha_output()`, and the workflow gates commit/push and issue creation on them. `check-wwscan.yml` is the live example. `run_monitor.R` still emits `data_updated`/`sample_date`/`fetch_ok`/`data_stale`/`stale_days`, but nothing reads them now that `check-data.yml` is gone; the calls are harmless outside CI and are left in place so a revival needs no code change. Free-text outputs reach `github-script` through `env:`, never string interpolation — keep it that way.
 
 ## The WastewaterSCAN pipeline
 
