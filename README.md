@@ -15,6 +15,8 @@ There are now **two independent pipelines** in this repo for the same metro Bost
 
 The two measure the same virus in the same sewershed with different lab methods, so **their numbers cannot be compared or combined**. They're kept as separate series everywhere: separate CSVs, separate state files, separate charts.
 
+UPDATE: Mass Dept. of Public Health ended its testing program with Biobot Analytics in July 2026 and is transitioning to in-house testing. 
+
 ## Longer Overview
 
 This project, written partly by Claude Opus 4.5, streamlines and improves some code I wrote pre-GenAI years ago to monitor [Massachusetts Water Resources Authority (MWRA) Biobot Covid wastewater testing data](https://www.mwra.com/biobot/biobotdata.htm). I never made that code public because, well, I wasn't super proud of it 😅 -- I wrote it in a hurry at the start of the pandemic and never really rationalized it or cleaned it up.
