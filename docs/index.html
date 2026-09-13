@@ -131,6 +131,26 @@
             color: white;
         }
 
+        /* A bare flex row for controls that sit inside a .chart-container.
+           Deliberately not .controls, which paints its own white card and
+           would nest a second shadowed box inside the chart panel. */
+        .chart-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 12px;
+        }
+
+        /* Explains the log axis, and owns up to any points it hides.
+           Only rendered while the log view is active. */
+        .scale-note {
+            margin-top: 10px;
+            font-size: 0.78rem;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+
         .chart-container {
             background: white;
             border-radius: 10px;
@@ -308,6 +328,14 @@
                 flex-direction: column;
             }
 
+            /* Stack Date Range above Y Axis on phones. The groups carry
+               flex: 1, whose 0% basis beats the width: 100% below, so the
+               column direction is what actually separates them. */
+            .chart-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
             .control-group {
                 width: 100%;
             }
@@ -345,17 +373,29 @@
                 </span>
             </div>
 
-            <div class="control-group" style="margin-bottom:12px;">
-                <label>Date Range</label>
-                <div class="preset-buttons" id="wwscanPresets">
-                    <button class="preset-btn" data-days="90">90d</button>
-                    <button class="preset-btn active" data-days="180">6mo</button>
-                    <button class="preset-btn" data-days="365">1yr</button>
-                    <button class="preset-btn" data-days="0">All</button>
+            <div class="chart-controls">
+                <div class="control-group">
+                    <label>Date Range</label>
+                    <div class="preset-buttons" id="wwscanPresets">
+                        <button class="preset-btn" data-days="90">90d</button>
+                        <button class="preset-btn active" data-days="180">6mo</button>
+                        <button class="preset-btn" data-days="365">1yr</button>
+                        <button class="preset-btn" data-days="0">All</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Y Axis</label>
+                    <div class="preset-buttons" id="wwscanScales">
+                        <button class="preset-btn active" data-scale="linear">Linear</button>
+                        <button class="preset-btn" data-scale="log">Log</button>
+                    </div>
                 </div>
             </div>
 
             <div id="chartWwscan"><div class="loading">Loading data...</div></div>
+
+            <p class="scale-note" id="wwscanScaleNote" style="display:none;"></p>
 
             <p class="caveat">
                 Values are SARS-CoV-2 N gene copies per gram of dry solids, normalized to PMMoV
@@ -812,6 +852,10 @@
         let wwscanChart = null;
         let wwscanPreset = 180;
         let wwscanThresholds = null;
+        // Linear by default, always. A log axis is the honest way to show a
+        // series spanning four orders of magnitude, but plenty of readers
+        // don't think in logs, so they have to ask for it.
+        let wwscanScale = 'linear';
 
         async function loadWwscan() {
             const el = document.getElementById('chartWwscan');
@@ -858,6 +902,28 @@
             document.getElementById('wwscanStatus').style.display = 'flex';
         }
 
+        // Says what the log axis means, and how many samples it had to drop.
+        function updateWwscanScaleNote(isLog, hiddenZeros) {
+            const note = document.getElementById('wwscanScaleNote');
+            if (!isLog) {
+                note.style.display = 'none';
+                return;
+            }
+
+            let text = 'Log scale: each gridline is 10\u00d7 the one below it, ' +
+                'so the low recent numbers and the big winter waves are both readable ' +
+                'on one chart.';
+            if (hiddenZeros > 0) {
+                const s = hiddenZeros === 1;
+                text += ` ${hiddenZeros} non-detect sample${s ? '' : 's'} ` +
+                    `(reported as 0) cannot be placed on a log axis and ${s ? 'is' : 'are'} ` +
+                    'not drawn here; switch back to Linear to see ' + (s ? 'it' : 'them') + '.';
+            }
+
+            note.textContent = text;
+            note.style.display = 'block';
+        }
+
         function renderWwscan() {
             const maxDate = wwscanData[wwscanData.length - 1].date;
             let visible = wwscanData;
@@ -868,10 +934,26 @@
                 visible = wwscanData.filter(d => d.date >= cutoff);
             }
 
+            const isLog = wwscanScale === 'log';
             const lineData = visible.map(d => [formatDate(d.date), d.covid]);
-            const pointData = visible
-                .filter(d => !isNaN(d.unsmoothed))
-                .map(d => [formatDate(d.date), d.unsmoothed]);
+
+            // A log axis has nowhere to put zero. Rather than nudge non-detect
+            // samples up to an invented floor, drop them and say so in the
+            // note under the chart. The smoothed line never hits zero, so it
+            // stays unbroken either way.
+            const plottable = visible.filter(d => !isNaN(d.unsmoothed));
+            const shownPoints = isLog ? plottable.filter(d => d.unsmoothed > 0) : plottable;
+            const hiddenZeros = plottable.length - shownPoints.length;
+            const pointData = shownPoints.map(d => [formatDate(d.date), d.unsmoothed]);
+
+            // Every visible date, in order, whether or not the scatter has a
+            // point for it. Both series are matched against this list, so
+            // dropping the zeros above can't reorder the x axis. Without it
+            // ECharts derives the categories from the scatter first and
+            // appends the line's extra dates at the end, out of order.
+            const categories = visible.map(d => formatDate(d.date));
+
+            updateWwscanScaleNote(isLog, hiddenZeros);
 
             const series = [
                 {
@@ -925,19 +1007,23 @@
                     }
                 },
                 legend: { bottom: 0, itemHeight: 8, textStyle: { fontSize: 11 } },
-                grid: { left: 60, right: 20, top: 50, bottom: 60 },
+                grid: { left: isLog ? 78 : 60, right: 20, top: 50, bottom: 60 },
                 xAxis: {
                     type: 'category',
+                    data: categories,
                     axisLabel: {
                         formatter: value => formatDateShort(new Date(value)),
                         rotate: 45
                     }
                 },
                 yAxis: {
-                    type: 'value',
-                    name: 'Normalized copies',
+                    // setOption(..., true) replaces the whole option object,
+                    // so switching the axis type here is a clean swap.
+                    type: isLog ? 'log' : 'value',
+                    logBase: 10,
+                    name: isLog ? 'Normalized copies (log scale)' : 'Normalized copies',
                     nameLocation: 'middle',
-                    nameGap: 45,
+                    nameGap: isLog ? 62 : 45,
                     axisLabel: { formatter: value => value.toLocaleString() }
                 },
                 series: series,
@@ -951,6 +1037,17 @@
                 wwscanPreset = parseInt(btn.dataset.days);
                 document.querySelectorAll('#wwscanPresets .preset-btn').forEach(b => {
                     b.classList.toggle('active', parseInt(b.dataset.days) === wwscanPreset);
+                });
+                renderWwscan();
+            });
+        });
+
+        document.querySelectorAll('#wwscanScales .preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!wwscanChart) return;  // data never loaded
+                wwscanScale = btn.dataset.scale;
+                document.querySelectorAll('#wwscanScales .preset-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.scale === wwscanScale);
                 });
                 renderWwscan();
             });
