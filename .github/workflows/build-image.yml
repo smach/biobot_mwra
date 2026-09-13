@@ -1,8 +1,8 @@
 name: Build container image
 
-# Builds the pinned runtime image used by check-data.yml and pushes it to the
+# Builds the pinned runtime image used by check-wwscan.yml and pushes it to the
 # GitHub Container Registry. Runs only when the Dockerfile (or this workflow)
-# changes, so it is not part of the twice-daily data-check cost.
+# changes, so it is not part of the daily data-check cost.
 on:
   push:
     branches: [main]
