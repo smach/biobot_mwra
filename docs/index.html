@@ -42,12 +42,6 @@
             font-size: 0.9rem;
         }
 
-        .last-updated {
-            color: #27ae60;
-            font-size: 0.85rem;
-            margin-top: 4px;
-        }
-
         .controls {
             background: white;
             border-radius: 10px;
@@ -212,6 +206,31 @@
             font-size: 0.85rem;
         }
 
+        /* The WastewaterSCAN block now leads the page, so it gets no divider
+           rule above it -- there is nothing above it to divide from. */
+        #wwscanSection {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        /* The Biobot series ended in July 2026. Flag it clearly so the flat
+           right-hand edge of those charts is not read as "no virus". */
+        .retired-note {
+            margin-top: 8px;
+            padding: 10px 14px;
+            background: #fdf6e3;
+            border-left: 4px solid #d4a017;
+            border-radius: 4px;
+            color: #6b5900;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .section-heading p.retired-note {
+            color: #6b5900;
+        }
+
         .status-strip {
             display: flex;
             flex-wrap: wrap;
@@ -306,10 +325,59 @@
 <body>
     <div class="container">
         <header>
-            <h1>MWRA COVID-19 Wastewater Surveillance</h1>
-            <p class="subtitle">Massachusetts Water Resources Authority Biobot Data</p>
-            <p class="last-updated" id="lastUpdated"></p>
+            <h1>Boston COVID-19 Wastewater Surveillance</h1>
+            <p class="subtitle">Deer Island sewershed &mdash; WastewaterSCAN and MWRA Biobot</p>
         </header>
+
+        <!-- WastewaterSCAN leads the page: it is the only series still being
+             updated. The MWRA Biobot charts follow as a historical record. -->
+        <div class="section-heading" id="wwscanSection">
+            <h2>WastewaterSCAN &mdash; Deer Island</h2>
+            <p>Sampled two to three times a week. This is the current series.</p>
+        </div>
+
+        <div class="chart-container">
+            <div class="status-strip" id="wwscanStatus" style="display:none;">
+                <span class="level-badge" id="wwscanBadge">&mdash;</span>
+                <span class="status-text">
+                    <span id="wwscanHeadline"></span>
+                    <span class="change-note" id="wwscanChange"></span>
+                </span>
+            </div>
+
+            <div class="control-group" style="margin-bottom:12px;">
+                <label>Date Range</label>
+                <div class="preset-buttons" id="wwscanPresets">
+                    <button class="preset-btn" data-days="90">90d</button>
+                    <button class="preset-btn active" data-days="180">6mo</button>
+                    <button class="preset-btn" data-days="365">1yr</button>
+                    <button class="preset-btn" data-days="0">All</button>
+                </div>
+            </div>
+
+            <div id="chartWwscan"><div class="loading">Loading data...</div></div>
+
+            <p class="caveat">
+                Values are SARS-CoV-2 N gene copies per gram of dry solids, normalized to PMMoV
+                and multiplied by one million &mdash; the same units the
+                <a href="https://data.wastewaterscan.org/?plantId=b50c6424-02d1-482f-b928-dbed1d7eab25" target="_blank">WastewaterSCAN dashboard</a>
+                plots. The dashed lines are the national 33rd and 66th percentiles that define
+                the low / medium / high label. <strong>These numbers cannot be compared with the
+                MWRA Biobot charts below</strong>, which use a different lab method and report
+                copies per mL of wastewater.
+            </p>
+        </div>
+
+        <div class="section-heading">
+            <h2>MWRA Biobot &mdash; North and South systems</h2>
+            <p class="retired-note">
+                <strong>This series has ended.</strong> Mass DPH phased out its testing program
+                with Biobot Analytics in July 2026 and is moving testing in-house.
+                <span id="lastUpdated"></span> The charts below are kept as a historical record
+                and will not update again &mdash; the flat right-hand edge means sampling stopped,
+                not that the virus went away.
+            </p>
+        </div>
 
         <div class="controls">
             <div class="control-group">
@@ -357,43 +425,6 @@
         <div class="chart-container" style="margin-top:16px;">
             <div id="chartNorth"><div class="loading">Loading data...</div></div>
             <div class="stats" id="statsNorth"></div>
-        </div>
-
-        <div class="section-heading" id="wwscanSection">
-            <h2>WastewaterSCAN — Deer Island</h2>
-            <p>The same sewershed, sampled two to three times a week by a different program.</p>
-        </div>
-
-        <div class="chart-container">
-            <div class="status-strip" id="wwscanStatus" style="display:none;">
-                <span class="level-badge" id="wwscanBadge">—</span>
-                <span class="status-text">
-                    <span id="wwscanHeadline"></span>
-                    <span class="change-note" id="wwscanChange"></span>
-                </span>
-            </div>
-
-            <div class="control-group" style="margin-bottom:12px;">
-                <label>Date Range</label>
-                <div class="preset-buttons" id="wwscanPresets">
-                    <button class="preset-btn" data-days="90">90d</button>
-                    <button class="preset-btn active" data-days="180">6mo</button>
-                    <button class="preset-btn" data-days="365">1yr</button>
-                    <button class="preset-btn" data-days="0">All</button>
-                </div>
-            </div>
-
-            <div id="chartWwscan"><div class="loading">Loading data...</div></div>
-
-            <p class="caveat">
-                Values are SARS-CoV-2 N gene copies per gram of dry solids, normalized to PMMoV
-                and multiplied by one million — the same units the
-                <a href="https://data.wastewaterscan.org/?plantId=b50c6424-02d1-482f-b928-dbed1d7eab25" target="_blank">WastewaterSCAN dashboard</a>
-                plots. The dashed lines are the national 33rd and 66th percentiles that define
-                the low / medium / high label. <strong>These numbers cannot be compared with the
-                MWRA Biobot charts above</strong>, which use a different lab method and report
-                copies per mL of wastewater.
-            </p>
         </div>
 
         <footer>
@@ -457,7 +488,7 @@
                 setDateRange(90);
 
                 document.getElementById('lastUpdated').textContent =
-                    `Data through ${formatDateLong(maxDate)}`;
+                    `The final sample was collected ${formatDateLong(maxDate)}.`;
 
                 // Initialize charts
                 chartSouth = echarts.init(document.getElementById('chartSouth'));
