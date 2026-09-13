@@ -12,6 +12,7 @@ on:
     branches: [main]
     paths:
       - 'R/05_wwscan.R'
+      - 'R/utils.R'   # shared fetch/retry layer; nothing else runs it in CI now
       - 'run_wwscan.R'
       - '.github/workflows/check-wwscan.yml'
 

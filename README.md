@@ -285,7 +285,7 @@ WastewaterSCAN sample happened to arrive, since that workflow's deploy job only
 fires when there's new data. Both deploy jobs share a `pages` concurrency group
 so they can't deploy at the same time.
 
-`check-data.yml`, which scraped MWRA Biobot data twice daily, was **deleted in
+`check-data.yml`, which scraped MWRA Biobot data once a day, was **deleted in
 September 2026** when Mass DPH ended the Biobot program. The scraper code and
 its historical data remain in the repo; see *The Biobot pipeline is retired*
 below.
@@ -341,9 +341,18 @@ The MWRA site sits behind an Imperva bot challenge that intermittently serves a
 `curl-impersonate` clears it most of the time; when it doesn't, the pipeline
 treats it as a **transient no-op** and exits cleanly (green) so it doesn't raise
 a false alarm — the next run almost always recovers. As a safety net, if the
-newest processed data is more than 14 days old *and* a challenge is still
-happening, the run fails loudly instead (either the bypass has genuinely broken
-or MWRA has stopped publishing — both deserve a look).
+bypass hasn't gotten a clean page load through the wall in 14 days *and* a
+challenge is still happening, the run fails loudly instead: at that point the
+bypass has genuinely broken, or the wall changed. This is deliberately keyed
+off when the bypass last *worked* (`last_successful_fetch` in the state file),
+not off how old the data is — MWRA pausing publishing is a separate, benign
+signal and must not turn every challenged run red.
+
+Now that no workflow runs the scraper, nothing advances that marker. A manual
+`source("run_monitor.R")` after mid-September 2026 will therefore trip this
+hard-fail on the first bot challenge it meets — the bypass isn't broken, it
+just hasn't been exercised. If you revive the pipeline, expect that and reset
+`last_successful_fetch` by hand.
 
 ### Setup
 

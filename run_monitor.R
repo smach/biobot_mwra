@@ -78,8 +78,9 @@ if (identical(update_info$status, "challenge")) {
 } else {
 
   # The page loaded cleanly (real content, not a challenge), so the bypass is
-  # working right now. Record it -- committed on clean runs by the workflow --
-  # so a later challenged run keeps quiet instead of tripping the hard-fail.
+  # working right now. Record it so a later challenged run keeps quiet instead
+  # of tripping the hard-fail. (check-data.yml used to commit this on clean
+  # runs; with that workflow gone the marker only moves on manual runs.)
   record_successful_fetch()
   set_gha_output("fetch_ok", "true")
 

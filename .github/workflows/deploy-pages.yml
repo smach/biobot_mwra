@@ -39,6 +39,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          # Always publish main, whatever branch a manual Run-workflow was
+          # clicked from. The Actions UI defaults the dispatch ref to the branch
+          # you are viewing, so without this a click from a PR branch would put
+          # that branch's docs/ on the live site.
+          ref: main
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
