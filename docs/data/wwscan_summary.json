@@ -1,18 +1,18 @@
 {
-  "latest_date": "2026-10-28",
-  "latest_value": 128.7,
+  "latest_date": "2026-11-02",
+  "latest_value": 197.7,
   "level": "high",
   "level_source": "wastewaterscan",
   "trend": "none",
   "trend_significant": false,
-  "trend_p": 0.9776,
-  "trend_slope": -0.0042,
-  "trend_as_of": "2026-10-28",
+  "trend_p": 0.3236,
+  "trend_slope": 0.1477,
+  "trend_as_of": "2026-11-02",
   "trend_source": "wastewaterscan",
-  "change_pct": -28,
-  "headline": "Down 28% in the last 21 days (not a statistically significant trend) and high concentration",
-  "change_text": "The average of the last 21 days is 126 (down 28% from 175 over the previous 21 days).",
+  "change_pct": -21,
+  "headline": "Down 21% in the last 21 days (not a statistically significant trend) and high concentration",
+  "change_text": "The average of the last 21 days is 137 (down 21% from 174 over the previous 21 days).",
   "tertile_33": 20.3318,
   "tertile_66": 105.4016,
-  "generated": "2026-10-31T17:16:15Z"
+  "generated": "2026-11-05T20:02:15Z"
 }
