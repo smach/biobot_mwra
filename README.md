@@ -463,4 +463,5 @@ silently if their fields are renamed, and this repo's tests won't catch it:
 - `docs/data/wwscan_summary.json` — headline, level, trend, change sentence
 - `data/processed/wwscan_covid.csv` — the full series
 - `data/processed/indicators_summary.json` — `heading`, `sections` (each a
-  `heading` and a list of `lines`), `caveat`, `sources`, `newest_week_end`
+  `heading`, a list of `lines`, and a Markdown `source_note`), `caveat`,
+  `sources`, `newest_week_end`

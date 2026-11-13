@@ -128,6 +128,50 @@ describe("indicator_section()", {
   it("returns NULL when it has no lines", {
     expect_null(indicator_section("Massachusetts", list()))
   })
+
+  it("carries a note saying where its figures come from", {
+    section <- indicator_section("Closer to home", list(
+      indicator_line("Framingham: 1 of 10 tests positive (10.0%)",
+                     "2026-11-07", "dph", what = "town test results")
+    ))
+
+    expect_match(section$source_note, "Source: [Mass. Department",
+                 fixed = TRUE)
+  })
+})
+
+describe("indicator_source_note()", {
+  it("gives one credit when every figure has the same source", {
+    note <- indicator_source_note(list(
+      indicator_line("a", "2026-11-07", "dph", what = "county test results"),
+      indicator_line("b", "2026-11-07", "dph", what = "town test results")
+    ))
+
+    expect_equal(note, paste0(
+      "Source: [Mass. Department of Public Health](", DPH_PAGE_URL, ")."))
+  })
+
+  it("names each figure with its source when a section mixes them", {
+    note <- indicator_source_note(list(
+      indicator_line("a", "2026-11-07", "dph", what = "reported cases"),
+      indicator_line("b", "2026-11-07", "cdc_hosp", what = "hospital admissions")
+    ))
+
+    expect_equal(note, paste0(
+      "Sources: reported cases from the [Mass. Department of Public Health](",
+      DPH_PAGE_URL, "); hospital admissions from the [CDC](",
+      CDC_HOSP_PAGE_URL, ")."))
+  })
+
+  it("links the two CDC figures to their own datasets", {
+    note <- indicator_source_note(list(
+      indicator_line("a", "2026-11-07", "cdc_ed", what = "ER visits"),
+      indicator_line("b", "2026-11-07", "cdc_hosp", what = "hospital admissions")
+    ))
+
+    expect_match(note, CDC_ED_PAGE_URL, fixed = TRUE)
+    expect_match(note, CDC_HOSP_PAGE_URL, fixed = TRUE)
+  })
 })
 
 describe("indicators_summary()", {
@@ -142,6 +186,12 @@ describe("indicators_summary()", {
           "Reported cases: 1,123, up from 978",
           "ER visits with Covid: 0.55%, up from 0.49% (CDC trend: increasing)",
           "New hospital admissions: 71, down from 84"
+        ),
+        source_note = paste0(
+          "Sources: reported cases from the [Mass. Department of Public ",
+          "Health](", DPH_PAGE_URL, "); ER visits from the [CDC](",
+          CDC_ED_PAGE_URL, "); hospital admissions from the [CDC](",
+          CDC_HOSP_PAGE_URL, ")."
         )
       ),
       list(
@@ -149,10 +199,21 @@ describe("indicators_summary()", {
         lines = list(
           "Middlesex County: 7.0% of tests positive, up from 5.5%",
           "Framingham: 6 of 165 tests positive (3.6%)"
+        ),
+        source_note = paste0(
+          "Source: [Mass. Department of Public Health](", DPH_PAGE_URL, ")."
         )
       )
     ))
     expect_equal(payload$newest_week_end, "2026-11-07")
+  })
+
+  it("carries the undercount caveat in the approved wording", {
+    expect_equal(
+      fixture_summary()$payload$caveat,
+      paste("Reported cases undercount actual numbers, since home tests",
+            "aren't reported to the state.")
+    )
   })
 
   it("reports nothing unavailable when every source is current", {
