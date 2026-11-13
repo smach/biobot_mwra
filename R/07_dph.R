@@ -260,7 +260,8 @@ dph_lines <- function(data) {
           indicator_with_change(state$current, state$previous, indicator_count)),
     state$week_end, "dph",
     list(measure = "state_cases", current = state$current,
-         previous = state$previous)
+         previous = state$previous),
+    what = "reported cases"
   )
 
   # County: DPH's own percent positivity, shown as a percentage.
@@ -273,7 +274,8 @@ dph_lines <- function(data) {
                                   indicator_pct1, " of tests positive")),
     county$week_end, "dph",
     list(measure = "county_positivity_pct", current = county$current,
-         previous = county$previous)
+         previous = county$previous),
+    what = "county test results"
   )
 
   # Town: the two exact counts, so the small denominator stays visible. No
@@ -288,7 +290,8 @@ dph_lines <- function(data) {
             indicator_pct1(100 * town$row$positive_tests / town$current)),
     town$week_end, "dph",
     list(measure = "town_tests", positive_tests = town$row$positive_tests,
-         tests = town$current)
+         tests = town$current),
+    what = "town test results"
   )
 
   list(state = state_line, county = county_line, town = town_line)

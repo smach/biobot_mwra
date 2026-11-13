@@ -249,7 +249,8 @@ cdc_ed_line <- function(data) {
 
   indicator_line(text, pair$week_end, "cdc_ed",
                  list(measure = "ed_pct_covid", current = pair$current,
-                      previous = pair$previous, cdc_trend = pair$row$ed_trend))
+                      previous = pair$previous, cdc_trend = pair$row$ed_trend),
+                 what = "ER visits")
 }
 
 #' Build the hospital admission line of the summary
@@ -268,6 +269,7 @@ cdc_hosp_line <- function(data) {
     pair$week_end, "cdc_hosp",
     list(measure = "hosp_admissions", current = pair$current,
          previous = pair$previous,
-         pct_hospitals_reporting = pair$row$hosp_pct_reporting)
+         pct_hospitals_reporting = pair$row$hosp_pct_reporting),
+    what = "hospital admissions"
   )
 }

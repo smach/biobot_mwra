@@ -11,8 +11,8 @@
 # to phrase its lines.
 #
 # Every sentence is written here, in the repo, so the wording exists in exactly
-# one place. The server prints `heading`, `sections`, `caveat`, and `sources`
-# and decides nothing.
+# one place. The server prints `heading`, each section's `heading`, `lines`,
+# and `source_note`, and the `caveat`, and decides nothing.
 
 INDICATORS_SUMMARY_PATH <- "data/processed/indicators_summary.json"
 
@@ -111,10 +111,13 @@ indicator_latest_pair <- function(data, column) {
 #' @param week_end Week the figure covers
 #' @param source Source key: "dph", "cdc_ed", or "cdc_hosp"
 #' @param values Named list of the raw numbers behind the text, for auditing
+#' @param what Short name for the figure, used when a section has to say which
+#'   figure came from which source ("reported cases from ...")
 #' @return List
-indicator_line <- function(text, week_end, source, values = list()) {
+indicator_line <- function(text, week_end, source, values = list(),
+                           what = "figures") {
   list(text = text, week_end = as.Date(week_end), source = source,
-       values = values)
+       values = values, what = what)
 }
 
 #' Is this line recent enough to present as current?
@@ -130,9 +133,37 @@ indicator_is_fresh <- function(line, today = Sys.Date(),
 #' each week DPH is a week ahead -- each line carries its own date instead, so
 #' no figure is ever shown under another figure's week.
 #'
+#' Say where a section's figures come from, as one Markdown sentence
+#'
+#' A section drawn from a single source gets "Source: <link>." One that mixes
+#' sources names each figure with its own, so nobody has to guess which number
+#' is the state's and which is CDC's.
+#'
+#' @param lines List of indicator_line() results
+#' @return Character scalar of Markdown
+indicator_source_note <- function(lines) {
+  credits <- indicator_source_credits()
+  link <- function(source) {
+    sprintf("[%s](%s)", credits[[source]]$name, credits[[source]]$url)
+  }
+
+  sources <- vapply(lines, function(l) l$source, character(1))
+
+  if (length(unique(sources)) == 1) {
+    return(sprintf("Source: %s.", link(sources[1])))
+  }
+
+  parts <- vapply(lines, function(l) {
+    sprintf("%s from the %s", l$what, link(l$source))
+  }, character(1))
+
+  paste0("Sources: ", paste(parts, collapse = "; "), ".")
+}
+
 #' @param title Section title, e.g. "Massachusetts"
 #' @param lines List of indicator_line() results (NULLs already removed)
-#' @return List with `heading` and `lines`, or NULL when there are no lines
+#' @return List with `heading`, `lines`, and `source_note`, or NULL when there
+#'   are no lines
 indicator_section <- function(title, lines) {
   if (length(lines) == 0) {
     return(NULL)
@@ -151,17 +182,17 @@ indicator_section <- function(title, lines) {
   }
 
   # as.list() so a single line still serializes as a JSON array, not a string.
-  list(heading = heading, lines = as.list(unname(texts)))
+  list(heading = heading, lines = as.list(unname(texts)),
+       source_note = indicator_source_note(lines))
 }
 
 # Who to credit, keyed the same way as the lines' `source` field.
 indicator_source_credits <- function() {
   list(
     dph = list(name = "Mass. Department of Public Health", url = DPH_PAGE_URL),
-    cdc_ed = list(name = "CDC National Syndromic Surveillance Program",
-                  url = CDC_ED_PAGE_URL),
-    cdc_hosp = list(name = "CDC National Healthcare Safety Network",
-                    url = CDC_HOSP_PAGE_URL)
+    # Both are CDC to a reader; the links go to the two different datasets.
+    cdc_ed = list(name = "CDC", url = CDC_ED_PAGE_URL),
+    cdc_hosp = list(name = "CDC", url = CDC_HOSP_PAGE_URL)
   )
 }
 
@@ -210,7 +241,8 @@ indicators_summary <- function(dph = NULL, cdc_ed = NULL, cdc_hosp = NULL,
   # The undercount caveat is about reported cases, so it only appears when a
   # DPH line does.
   caveat <- if ("dph" %in% used) {
-    "Reported cases undercount, since home tests aren't reported to the state."
+    paste("Reported cases undercount actual numbers, since home tests aren't",
+          "reported to the state.")
   } else {
     NULL
   }
