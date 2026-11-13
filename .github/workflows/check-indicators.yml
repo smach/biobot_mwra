@@ -1,0 +1,127 @@
+name: Check Covid Indicators
+
+# Mass. DPH cases and testing plus CDC emergency department and hospital
+# figures, written to data/processed/indicators_summary.json for the email.
+# Entirely separate from the wastewater check; see run_indicators.R.
+
+on:
+  # Twice a day. DPH posts on Thursdays and CDC on Fridays, neither at a fixed
+  # hour, so the second run picks up anything posted in the afternoon. Most
+  # runs find nothing new and commit nothing. Offset from check-wwscan.yml
+  # (12:20 UTC) so the two never push to main at the same moment.
+  schedule:
+    - cron: '40 14,23 * * *'
+
+  workflow_dispatch:
+
+  push:
+    branches: [main]
+    paths:
+      - 'R/06_indicators.R'
+      - 'R/07_dph.R'
+      - 'R/08_cdc.R'
+      - 'run_indicators.R'
+      - '.github/workflows/check-indicators.yml'
+
+jobs:
+  check-indicators:
+    runs-on: ubuntu-latest
+
+    # Prebuilt image from build-image.yml: R, packages (including readxl), and
+    # curl-impersonate are all baked in, so nothing installs at run time.
+    container:
+      image: ghcr.io/${{ github.repository }}:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    permissions:
+      contents: write
+      issues: write
+      packages: read
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Run indicators check
+        id: check
+        run: Rscript run_indicators.R
+
+      # The R script only rewrites a file when its content changed, so this
+      # commits on the one or two runs a week that bring new data and is a
+      # no-op otherwise. Nothing here is under docs/, so there is no Pages
+      # deploy to trigger.
+      - name: Commit and push changes
+        env:
+          WEEK_END: ${{ steps.check.outputs.newest_week_end }}
+        run: |
+          # Running as root inside the container, the checkout is owned by a
+          # different uid, so mark the workspace safe before touching git.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/processed/dph_covid.csv \
+                  data/processed/cdc_ed_covid.csv \
+                  data/processed/cdc_hosp_covid.csv \
+                  data/processed/indicators_summary.json
+          if git diff --staged --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -m "Update Covid indicators (week ending ${WEEK_END:-unknown})"
+            # Rebase rather than fail if anything else landed on main between
+            # checkout and push.
+            git pull --rebase origin main
+            git push
+          fi
+
+      # A source that has gone quiet is reported once, not as a red run every
+      # day: DPH stops updating each summer between seasons, and that pause is
+      # expected. An issue opened in the last 30 days, open or closed, counts
+      # as already reported.
+      - name: Report sources with no current data
+        if: steps.check.outputs.unavailable != ''
+        uses: actions/github-script@v7
+        # Passed through the environment rather than interpolated into the
+        # script body, so free text can never terminate a JS string literal.
+        env:
+          UNAVAILABLE: ${{ steps.check.outputs.unavailable }}
+        with:
+          script: |
+            const label = 'indicators-stale';
+            const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+            const recent = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: label,
+              state: 'all',
+              since: since.toISOString(),
+              per_page: 20
+            });
+            const alreadyReported = recent.data.some(
+              issue => new Date(issue.created_at) >= since);
+            if (alreadyReported) {
+              console.log('Already reported in the last 30 days; not opening another issue.');
+              return;
+            }
+
+            const body = 'The Covid indicators check has no current data from:\n\n' +
+              process.env.UNAVAILABLE.split('; ').map(s => '- ' + s).join('\n') +
+              '\n\nThose lines are being left out of the email until the source ' +
+              'publishes again. The wastewater email itself is not affected.\n\n' +
+              'If this is Mass. DPH between July and early fall, it is probably the ' +
+              'gap between respiratory seasons and needs no action. Otherwise the ' +
+              'feed may have moved or mass.gov may be blocking the download; see ' +
+              'the README section on Covid indicators.';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Covid indicators: no current data from a source',
+              body: body,
+              labels: [label, 'automated']
+            });

@@ -1,0 +1,216 @@
+week_end,ed_pct_covid,ed_trend
+2022-10-01,3.23,Increasing
+2022-10-08,3.4,Increasing
+2022-10-15,3.16,No Change
+2022-10-22,2.6,Decreasing
+2022-10-29,2.45,Decreasing
+2022-11-05,2.25,Decreasing
+2022-11-12,2.15,Decreasing
+2022-11-19,2.06,Decreasing
+2022-11-26,2.52,No Change
+2022-12-03,3.1,Increasing
+2022-12-10,3.48,Increasing
+2022-12-17,3.86,Increasing
+2022-12-24,4.55,Increasing
+2022-12-31,5.37,Increasing
+2023-01-07,4.87,Increasing
+2023-01-14,4.2,Increasing
+2023-01-21,3.38,Decreasing
+2023-01-28,2.97,Decreasing
+2023-02-04,2.73,Decreasing
+2023-02-11,2.45,Decreasing
+2023-02-18,2.22,Decreasing
+2023-02-25,1.94,Decreasing
+2023-03-04,1.64,Decreasing
+2023-03-11,1.39,Decreasing
+2023-03-18,1.29,Decreasing
+2023-03-25,1.11,Decreasing
+2023-04-01,1.07,Decreasing
+2023-04-08,1.01,Decreasing
+2023-04-15,0.94,Decreasing
+2023-04-22,0.65,Decreasing
+2023-04-29,0.6,Decreasing
+2023-05-06,0.63,Decreasing
+2023-05-13,0.56,Decreasing
+2023-05-20,0.54,No Change
+2023-05-27,0.57,No Change
+2023-06-03,0.69,No Change
+2023-06-10,0.59,Increasing
+2023-06-17,0.59,No Change
+2023-06-24,0.54,No Change
+2023-07-01,0.48,Decreasing
+2023-07-08,0.49,Decreasing
+2023-07-15,0.53,No Change
+2023-07-22,0.72,Increasing
+2023-07-29,0.85,Increasing
+2023-08-05,0.95,Increasing
+2023-08-12,1.31,Increasing
+2023-08-19,1.59,Increasing
+2023-08-26,1.71,Increasing
+2023-09-02,1.96,Increasing
+2023-09-09,2.16,Increasing
+2023-09-16,2.01,Increasing
+2023-09-23,2.21,Increasing
+2023-09-30,2.16,No Change
+2023-10-07,2.07,No Change
+2023-10-14,1.72,Decreasing
+2023-10-21,1.6,Decreasing
+2023-10-28,1.37,Decreasing
+2023-11-04,1.16,Decreasing
+2023-11-11,1.28,Decreasing
+2023-11-18,1.53,No Change
+2023-11-25,1.9,Increasing
+2023-12-02,2.34,Increasing
+2023-12-09,2.48,Increasing
+2023-12-16,2.96,Increasing
+2023-12-23,3.69,Increasing
+2023-12-30,4.41,Increasing
+2024-01-06,4.17,Increasing
+2024-01-13,3.39,Increasing
+2024-01-20,2.88,Decreasing
+2024-01-27,2.4,Decreasing
+2024-02-03,1.95,Decreasing
+2024-02-10,1.85,Decreasing
+2024-02-17,1.5,Decreasing
+2024-02-24,1.27,Decreasing
+2024-03-02,1.06,Decreasing
+2024-03-09,0.84,Decreasing
+2024-03-16,0.64,Decreasing
+2024-03-23,0.56,Decreasing
+2024-03-30,0.59,Decreasing
+2024-04-06,0.51,Decreasing
+2024-04-13,0.46,Decreasing
+2024-04-20,0.47,Decreasing
+2024-04-27,0.39,Decreasing
+2024-05-04,0.4,Decreasing
+2024-05-11,0.44,No Change
+2024-05-18,0.5,No Change
+2024-05-25,0.55,Increasing
+2024-06-01,0.49,Increasing
+2024-06-08,0.6,Increasing
+2024-06-15,0.68,Increasing
+2024-06-22,0.86,Increasing
+2024-06-29,0.99,Increasing
+2024-07-06,1.36,Increasing
+2024-07-13,1.58,Increasing
+2024-07-20,1.57,Increasing
+2024-07-27,1.82,Increasing
+2024-08-03,2.04,Increasing
+2024-08-10,1.94,Increasing
+2024-08-17,2.23,Increasing
+2024-08-24,2.18,Increasing
+2024-08-31,2.04,No Change
+2024-09-07,1.89,No Change
+2024-09-14,1.87,Decreasing
+2024-09-21,1.77,Decreasing
+2024-09-28,1.31,Decreasing
+2024-10-05,1.13,Decreasing
+2024-10-12,0.84,Decreasing
+2024-10-19,0.82,Decreasing
+2024-10-26,0.76,Decreasing
+2024-11-02,0.73,Decreasing
+2024-11-09,0.58,Decreasing
+2024-11-16,0.65,Decreasing
+2024-11-23,0.66,Decreasing
+2024-11-30,0.81,No Change
+2024-12-07,0.87,Increasing
+2024-12-14,1.08,Increasing
+2024-12-21,1.41,Increasing
+2024-12-28,1.79,Increasing
+2025-01-04,1.98,Increasing
+2025-01-11,1.62,Increasing
+2025-01-18,1.37,No Change
+2025-01-25,1.33,Decreasing
+2025-02-01,1.17,Decreasing
+2025-02-08,0.94,Decreasing
+2025-02-15,0.95,Decreasing
+2025-02-22,0.71,Decreasing
+2025-03-01,0.59,Decreasing
+2025-03-08,0.54,Decreasing
+2025-03-15,0.53,Decreasing
+2025-03-22,0.56,Decreasing
+2025-03-29,0.56,No Change
+2025-04-05,0.53,No Change
+2025-04-12,0.47,No Change
+2025-04-19,0.48,Decreasing
+2025-04-26,0.5,No Change
+2025-05-03,0.42,No Change
+2025-05-10,0.33,Decreasing
+2025-05-17,0.33,Decreasing
+2025-05-24,0.33,Decreasing
+2025-05-31,0.36,No Change
+2025-06-07,0.36,No Change
+2025-06-14,0.3,No Change
+2025-06-21,0.32,No Change
+2025-06-28,0.33,No Change
+2025-07-05,0.34,No Change
+2025-07-12,0.35,No Change
+2025-07-19,0.4,No Change
+2025-07-26,0.44,Increasing
+2025-08-02,0.61,Increasing
+2025-08-09,0.73,Increasing
+2025-08-16,0.85,Increasing
+2025-08-23,0.9,Increasing
+2025-08-30,0.96,Increasing
+2025-09-06,1.11,Increasing
+2025-09-13,1.14,Increasing
+2025-09-20,1.02,Increasing
+2025-09-27,0.98,No Change
+2025-10-04,0.71,Decreasing
+2025-10-11,0.51,Decreasing
+2025-10-18,0.43,Decreasing
+2025-10-25,0.41,Decreasing
+2025-11-01,0.42,Decreasing
+2025-11-08,0.38,Decreasing
+2025-11-15,0.37,No Change
+2025-11-22,0.5,No Change
+2025-11-29,0.64,Increasing
+2025-12-06,0.7,Increasing
+2025-12-13,0.69,Increasing
+2025-12-20,0.97,Increasing
+2025-12-27,1.22,Increasing
+2026-01-03,1.39,Increasing
+2026-01-10,1.13,Increasing
+2026-01-17,0.97,No Change
+2026-01-24,0.95,Decreasing
+2026-01-31,0.87,Decreasing
+2026-02-07,0.82,Decreasing
+2026-02-14,0.7,Decreasing
+2026-02-21,0.67,Decreasing
+2026-02-28,0.6,Decreasing
+2026-03-07,0.48,Decreasing
+2026-03-14,0.37,Decreasing
+2026-03-21,0.4,Decreasing
+2026-03-28,0.43,Decreasing
+2026-04-04,0.3,No Change
+2026-04-11,0.24,Decreasing
+2026-04-18,0.18,Decreasing
+2026-04-25,0.19,Decreasing
+2026-05-02,0.12,Decreasing
+2026-05-09,0.11,Decreasing
+2026-05-16,0.11,Decreasing
+2026-05-23,0.1,Decreasing
+2026-05-30,0.09,No Change
+2026-06-06,0.08,No Change
+2026-06-13,0.05,Decreasing
+2026-06-20,0.05,Decreasing
+2026-06-27,0.05,Decreasing
+2026-07-04,0.07,No Change
+2026-07-11,0.06,No Change
+2026-07-18,0.08,No Change
+2026-07-25,0.1,Increasing
+2026-08-01,0.09,Increasing
+2026-08-08,0.15,Increasing
+2026-08-15,0.15,Increasing
+2026-08-22,0.2,Increasing
+2026-08-29,0.23,Increasing
+2026-09-05,0.27,Increasing
+2026-09-12,0.27,Increasing
+2026-09-19,0.36,Increasing
+2026-09-26,0.41,Increasing
+2026-10-03,0.43,Increasing
+2026-10-10,0.41,Increasing
+2026-10-17,0.43,No Change
+2026-10-24,0.4,No Change
+2026-10-31,0.49,No Change
+2026-11-07,0.55,Increasing

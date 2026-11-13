@@ -1,0 +1,76 @@
+{
+  "heading": "Other Covid indicators",
+  "sections": [
+    {
+      "heading": "Massachusetts, week ending Nov. 7:",
+      "lines": [
+        "Reported cases: 1,123, up from 978",
+        "ER visits with Covid: 0.55%, up from 0.49% (CDC trend: increasing)",
+        "New hospital admissions: 71, down from 84"
+      ]
+    },
+    {
+      "heading": "Closer to home, week ending Nov. 7:",
+      "lines": [
+        "Middlesex County: 7.0% of tests positive, up from 5.5%",
+        "Framingham: 6 of 165 tests positive (3.6%)"
+      ]
+    }
+  ],
+  "caveat": "Reported cases undercount, since home tests aren't reported to the state.",
+  "sources": [
+    {
+      "name": "Mass. Department of Public Health",
+      "url": "https://www.mass.gov/info-details/covid-19-reporting"
+    },
+    {
+      "name": "CDC National Syndromic Surveillance Program",
+      "url": "https://data.cdc.gov/Public-Health-Surveillance/NSSP-Emergency-Department-Visit-Trajectories-by-St/rdmq-nq56"
+    },
+    {
+      "name": "CDC National Healthcare Safety Network",
+      "url": "https://data.cdc.gov/Public-Health-Surveillance/Weekly-Hospital-Respiratory-Data-HRD-Metrics-by-Ju/ua7e-t2fy"
+    }
+  ],
+  "newest_week_end": "2026-11-07",
+  "values": [
+    {
+      "source": "dph",
+      "week_end": "2026-11-07",
+      "measure": "state_cases",
+      "current": 1123,
+      "previous": 978
+    },
+    {
+      "source": "cdc_ed",
+      "week_end": "2026-11-07",
+      "measure": "ed_pct_covid",
+      "current": 0.55,
+      "previous": 0.49,
+      "cdc_trend": "Increasing"
+    },
+    {
+      "source": "cdc_hosp",
+      "week_end": "2026-11-07",
+      "measure": "hosp_admissions",
+      "current": 71,
+      "previous": 84,
+      "pct_hospitals_reporting": 88.89
+    },
+    {
+      "source": "dph",
+      "week_end": "2026-11-07",
+      "measure": "county_positivity_pct",
+      "current": 7.01802293828509,
+      "previous": 5.504
+    },
+    {
+      "source": "dph",
+      "week_end": "2026-11-07",
+      "measure": "town_tests",
+      "positive_tests": 6,
+      "tests": 165
+    }
+  ],
+  "generated": "2026-11-13T20:03:14Z"
+}
