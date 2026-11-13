@@ -115,6 +115,7 @@ install.packages(c(
   "pdftools",
   "dplyr",
   "readr",
+  "readxl",
   "ggplot2",
   "scales",
   "jsonlite"
@@ -247,6 +248,55 @@ itself loads to draw its charts — but that flag suggests the data partner didn
 opt into bulk downloads. If you're doing anything beyond personal/civic
 monitoring, email them first: `info@wastewaterscan.org`.
 
+## Other Covid indicators (Mass. DPH and CDC)
+
+`run_indicators.R` gathers a handful of non-wastewater figures and writes them
+as ready-made sentences to `data/processed/indicators_summary.json`. The email
+prints that block under the wastewater chart. **These figures are not on the
+dashboard**, and they are never merged with either wastewater series.
+
+```sh
+# CDC works with plain curl; mass.gov does not, so point the DPH step at a
+# workbook you downloaded in a browser.
+DPH_WORKBOOK_PATH=temp/covid-19-dashboard.xlsx CURL_IMPERSONATE_BIN=curl Rscript run_indicators.R
+```
+
+| Line in the email | Source | Updated |
+|---|---|---|
+| Statewide reported cases | [Mass. DPH COVID-19 dashboard data](https://www.mass.gov/info-details/covid-19-reporting), sheet *Weekly Cases and Deaths* | Thursdays |
+| Middlesex County percent positivity | Same workbook, sheet *County Data* | Thursdays |
+| Framingham positive tests out of total tests | Same workbook, sheet *City and Town Data* | Thursdays |
+| Percent of ER visits with Covid, plus CDC's trend label | [CDC NSSP, dataset `rdmq-nq56`](https://data.cdc.gov/Public-Health-Surveillance/NSSP-Emergency-Department-Visit-Trajectories-by-St/rdmq-nq56) | Fridays |
+| New hospital admissions | [CDC NHSN, dataset `ua7e-t2fy`](https://data.cdc.gov/Public-Health-Surveillance/Weekly-Hospital-Respiratory-Data-HRD-Metrics-by-Ju/ua7e-t2fy) | Fridays |
+
+All five cover weeks that run Sunday to Saturday.
+
+Things worth knowing:
+
+- **Reported cases undercount badly**, because home tests are never reported.
+  The direction means something; the level doesn't. The block says so.
+- **DPH suppresses small counts.** A town's weekly case count is usually the
+  string `1-4`. Tests and positive tests are published exactly, so the
+  Framingham line is built from those and shows both numbers ("6 of 165 tests
+  positive") to keep the small denominator in view. `dph_covid.csv` keeps the
+  original text in `cases_raw` beside the numeric `cases`.
+- **The trend label is CDC's, not ours.** Everything else is a plain "up from /
+  down from" comparison of two published numbers, made on the rounded figures
+  the reader sees. There are no significance tests here.
+- **Each source stands alone.** A run tries all three, rewrites the CSV of each
+  one that worked, then builds the summary from the CSVs on disk. A source
+  that fails today still appears from its last good fetch until its newest
+  week is more than 21 days old, at which point its lines drop out and the
+  workflow opens one `indicators-stale` issue. DPH stops updating every summer
+  between respiratory seasons, so that issue is expected then.
+- **When DPH and CDC cover different weeks** (DPH posts a day earlier), each
+  line carries its own "week ending" date instead of sharing one in the
+  heading.
+- **mass.gov refuses plain automated requests.** The download goes through the
+  same `impersonate_fetch()` used elsewhere, and it could stop working without
+  notice. If it does, the DPH lines age out as above and everything else keeps
+  running. The CDC datasets are documented public APIs with no such problem.
+
 ## Data Source
 
 [MWRA Biobot Data Page](https://www.mwra.com/biobot/biobotdata.htm)
@@ -269,7 +319,11 @@ Only the most recent PDF and CSV files are kept (overwritten on each update).
 
 ## GitHub Actions
 
-`check-wwscan.yml` (WastewaterSCAN, daily) is the only data-checking workflow.
+`check-indicators.yml` runs twice a day for the Mass. DPH and CDC figures
+described above. It commits only when a source has published something new, and
+it never deploys the dashboard, because nothing it writes is under `docs/`.
+
+`check-wwscan.yml` (WastewaterSCAN, daily) is the wastewater workflow.
 It:
 
 1. Checks for new data
@@ -367,6 +421,7 @@ just hasn't been exercised. If you revive the pipeline, expect that and reset
 biobot_mwra/
 ├── .github/workflows/
 │   ├── check-wwscan.yml     # WastewaterSCAN, daily
+│   ├── check-indicators.yml # Mass. DPH and CDC figures, twice daily
 │   ├── deploy-pages.yml     # republish docs/ on dashboard edits
 │   └── build-image.yml
 ├── Dockerfile
@@ -376,10 +431,13 @@ biobot_mwra/
 │   ├── 02_download_pdf.R
 │   ├── 03_extract_data.R
 │   ├── 04_visualize.R
-│   └── 05_wwscan.R          # WastewaterSCAN fetch, parse, level, trend
+│   ├── 05_wwscan.R          # WastewaterSCAN fetch, parse, level, trend
+│   ├── 06_indicators.R      # shared wording and summary for DPH + CDC
+│   ├── 07_dph.R             # Mass. DPH workbook: cases, tests, positivity
+│   └── 08_cdc.R             # CDC: ER visits and hospital admissions
 ├── data/
 │   ├── latest_data.pdf
-│   └── processed/           # *.csv for both pipelines
+│   └── processed/           # *.csv for every pipeline, indicators_summary.json
 ├── docs/
 │   ├── index.html
 │   └── data/                # combined_data.csv, wwscan_covid.csv, wwscan_summary.json
@@ -389,6 +447,7 @@ biobot_mwra/
 │   └── wwscan_state.json    # WastewaterSCAN
 ├── run_monitor.R            # MWRA pipeline
 ├── run_wwscan.R             # WastewaterSCAN pipeline
+├── run_indicators.R         # Mass. DPH and CDC figures
 └── README.md
 ```
 
@@ -397,9 +456,11 @@ biobot_mwra/
 I send myself an email when there's new data. That runs outside this repo and
 just reads the published files below, so nothing here needs to know about it.
 
-If you're reusing this code, treat these two as a **stable interface** rather
+If you're reusing this code, treat these three as a **stable interface** rather
 than internal dashboard files — anything consuming them over HTTP will break
 silently if their fields are renamed, and this repo's tests won't catch it:
 
 - `docs/data/wwscan_summary.json` — headline, level, trend, change sentence
 - `data/processed/wwscan_covid.csv` — the full series
+- `data/processed/indicators_summary.json` — `heading`, `sections` (each a
+  `heading` and a list of `lines`), `caveat`, `sources`, `newest_week_end`

@@ -3,7 +3,8 @@
 
 # Required packages
 required_packages <- c("testthat", "withr", "jsonlite", "rvest", "httr2",
-                       "pdftools", "readr", "ggplot2", "scales", "xml2")
+                       "pdftools", "readr", "readxl", "ggplot2", "scales",
+                       "xml2")
 
 # Check and load packages
 for (pkg in required_packages) {
@@ -22,6 +23,9 @@ source("R/02_download_pdf.R")
 source("R/03_extract_data.R")
 source("R/04_visualize.R")
 source("R/05_wwscan.R")
+source("R/06_indicators.R")
+source("R/07_dph.R")
+source("R/08_cdc.R")
 
 # Run tests
 message("\nRunning tests...\n")

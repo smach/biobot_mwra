@@ -10,7 +10,9 @@ An R project tracking COVID levels in metro Boston wastewater. It writes CSVs an
 
 What stays: the scraper itself (`run_monitor.R`, `R/01`-`R/04`), its tests, `state/last_update.json`, and the historical CSVs. The dashboard still charts the Biobot series as a closed historical record, and the scripts still run by hand if the program is ever revived. **Everything below describing the Biobot pipeline describes code that still works but is no longer scheduled** - it runs only when you source it yourself.
 
-**The WastewaterSCAN pipeline (`run_wwscan.R` + `R/05_wwscan.R`) is the only live one.** It reads WastewaterSCAN's feed for the same Deer Island sewershed, and was added in August 2026 when MWRA's Biobot publishing stalled for 19 days - which turned out to be the beginning of the wind-down rather than another pause. It shares only `R/utils.R` with the Biobot code; separate state file, CSV, workflow, and charts.
+**The WastewaterSCAN pipeline (`run_wwscan.R` + `R/05_wwscan.R`) is the only live wastewater one.** It reads WastewaterSCAN's feed for the same Deer Island sewershed, and was added in August 2026 when MWRA's Biobot publishing stalled for 19 days - which turned out to be the beginning of the wind-down rather than another pause. It shares only `R/utils.R` with the Biobot code; separate state file, CSV, workflow, and charts.
+
+**A third pipeline, `run_indicators.R` + `R/06`-`R/08`, is also live** (added November 2026). It has nothing to do with wastewater: it collects Mass. DPH case and testing figures and CDC emergency department and hospital figures, and writes them as ready-made sentences for the email. See *The indicators pipeline* below.
 
 This is **not an R package** — there is no `DESCRIPTION` or `NAMESPACE`. Everything is plain scripts `source()`d into the global environment. That single fact drives most of the testing conventions below.
 
@@ -25,12 +27,21 @@ source("run_monitor.R")
 
 # WastewaterSCAN: fetch -> extract -> CSV + summary JSON -> dashboard data
 source("run_wwscan.R")
+
+# Mass. DPH + CDC indicators: fetch each source -> CSVs -> summary JSON
+source("run_indicators.R")
 ```
 
 Running `run_wwscan.R` locally needs curl-impersonate, which isn't on Windows. Point it at plain curl instead — the WastewaterSCAN bucket has no bot wall:
 
 ```sh
 CURL_IMPERSONATE_BIN=curl Rscript run_wwscan.R
+```
+
+`run_indicators.R` needs the same override, and plain curl gets a 403 from mass.gov, so also hand it a DPH workbook downloaded in a browser:
+
+```sh
+DPH_WORKBOOK_PATH=temp/covid-19-dashboard.xlsx CURL_IMPERSONATE_BIN=curl Rscript run_indicators.R
 ```
 
 To force a run when MWRA hasn't published new data, set `force <- TRUE` at the top of `run_monitor.R` before sourcing. Note that a successful run **rewrites tracked files** (`data/processed/*.csv`, `output/plots/*.png`, `state/last_update.json`, `docs/data/`) — check `git status` afterward.
@@ -74,7 +85,7 @@ A challenge is treated as a **transient no-op** — clean exit, no alarm — *un
 
 **`impersonate_fetch()` is the only network entry point** in the codebase. Every network-touching test stubs it. Keep it that way; adding a second fetch path would silently escape both the challenge handling and the test seams.
 
-**Container-based CI.** `check-wwscan.yml` installs nothing at run time — it executes inside a prebuilt image (`Dockerfile`, pushed to GHCR by `build-image.yml`, which triggers only on `Dockerfile` changes). The image pins `rocker/r-ver:4.4.2`, installs packages from a dated Posit Package Manager snapshot (`2026-06-02`), and bakes in curl-impersonate v0.6.1 / chrome116. This exists because fresh per-run installs intermittently produced an `rlang.so: undefined symbol: SETLENGTH` ABI crash. After editing the `Dockerfile`, manually run the **Build container image** workflow before the next scheduled check, or that run may fail pulling a stale image (self-heals on the following run). The image still carries the Biobot pipeline's packages, since `run_monitor.R` has to stay runnable by hand.
+**Container-based CI.** `check-wwscan.yml` installs nothing at run time — it executes inside a prebuilt image (`Dockerfile`, pushed to GHCR by `build-image.yml`, which triggers only on `Dockerfile` changes). The image pins `rocker/r-ver:4.4.2`, installs packages from a dated Posit Package Manager snapshot (`2026-06-02`), and bakes in curl-impersonate v0.6.1 / chrome116. This exists because fresh per-run installs intermittently produced an `rlang.so: undefined symbol: SETLENGTH` ABI crash. After editing the `Dockerfile`, manually run the **Build container image** workflow before the next scheduled check, or that run may fail pulling a stale image (self-heals on the following run). The image still carries the Biobot pipeline's packages, since `run_monitor.R` has to stay runnable by hand. `check-indicators.yml` uses the same image and needs `readxl` from it.
 
 **Dashboard** (`docs/index.html`): a single self-contained HTML/CSS/JS file using ECharts 5.4.3 from CDN, calling `fetch('data/combined_data.csv')` and `fetch('data/wwscan_covid.csv')`. That `fetch` is why it needs a real web server locally. No build step.
 
@@ -108,6 +119,28 @@ If any of this needs re-checking, the README documents how to re-derive both URL
 
 **This file is public.** It is committed to a public GitHub repo, so keep deployment specifics, server paths, hostnames, and anything else environment-specific out of it. Those live in `.claude/DEPLOYMENT.md`, which is gitignored — read that file when working on anything deployment-related.
 
+## The indicators pipeline
+
+`R/06_indicators.R` (shared wording and summary), `R/07_dph.R`, `R/08_cdc.R`, `run_indicators.R`, and `.github/workflows/check-indicators.yml`. Shares only `R/utils.R` with the other pipelines.
+
+**It feeds the email only. None of it is on the dashboard**, and nothing it writes lives under `docs/`. The summary must never point readers at this repo or its dashboard to see these figures; `test-indicators.R` asserts that. Credits link to DPH and CDC.
+
+**Never merge these with a wastewater series**, and never put a wastewater figure from CDC in here: CDC's rating for Deer Island is built from the same WastewaterSCAN samples on a different scale, and would be a second verdict on the same data.
+
+**Sources.** The DPH workbook comes from `mass.gov/doc/covid-19-reporting-dashboard-data/download` (cases, tests, positivity by state, county, and town; posted Thursdays; no wastewater or hospital data in it). CDC figures come from two documented Socrata datasets on `data.cdc.gov`: `rdmq-nq56` (percent of ED visits with Covid, plus CDC's trend label) and `ua7e-t2fy` (weekly new hospital admissions), posted Fridays. All fetches go through `impersonate_fetch()`.
+
+**mass.gov has a bot wall** that returns 403 to plain automated requests, so the DPH download can stop working without notice. That is why the design below never depends on any one fetch succeeding.
+
+**How a run works, and why.** Each source is fetched independently; a success rewrites that source's CSV. The summary is then built from the CSVs on disk, not from what was just fetched. So a source that fails today still appears from its last good fetch, until its newest week is older than `INDICATORS_MAX_AGE_DAYS` (21), when its lines drop out and the workflow opens one `indicators-stale` issue. It is an issue rather than a red run on purpose: DPH stops updating every summer between respiratory seasons. The run fails only when all three fetches fail at once. There is no state file; the CSVs are the state.
+
+**The same read-don't-compute rule applies.** The ED trend word is CDC's `ed_trends_covid`, repeated as-is and attributed, even when it disagrees with the week-over-week numbers beside it (it describes CDC's smoothed series). Everything else is "up from / down from" between two published numbers, compared on the *formatted* values so a line can never read "7.0%, up from 7.0%". Don't add significance tests or trend calls of our own.
+
+**DPH suppression.** Small counts arrive as the strings `1-4`, `*`, and `**`. They parse to `NA`, with the original kept in `cases_raw`. Framingham's weekly case count is suppressed most weeks, which is why its line is built from tests and positive tests (published exactly) and has no week-over-week comparison.
+
+**`data/processed/indicators_summary.json` is a published interface**, read over HTTP by the same outside consumer as the WastewaterSCAN files. Every sentence in the email block is written here; the consumer prints `heading`, `sections[].heading`, `sections[].lines`, `caveat`, and `sources`, and uses `newest_week_end` to refuse a stale block. Renaming any of those is a breaking change that no test here will catch. The file is rewritten only when its content changes, so `generated` is the time of the last real change, not of the last run.
+
+Tests: `test-indicators.R`, `test-dph.R`, `test-cdc.R`, using `local_fetch_stubs()` from `helper-setup.R`. Fixtures are a trimmed copy of the real 2026-11-12 DPH workbook and real CDC responses from 2026-11-13; the summary tests pin the exact wording approved against those numbers.
+
 ## Testing conventions
 
 Tests were largely generated by the Posit `r-lib:testing-r-packages` skill and, per the README, have not been rigorously reviewed. Match the existing style rather than importing package-testing idioms:
@@ -119,4 +152,4 @@ Tests were largely generated by the Posit `r-lib:testing-r-packages` skill and, 
 
 - `test-wwscan.R` stubs both `impersonate_fetch` and `with_retry` via `local_wwscan_stubs()`, and uses `tests/testthat/fixtures/wwscan_boston.json` — a trimmed copy of the real feed (last 30 samples, two targets). Its newest sample is 2026-08-05, so the summary tests double as a regression check that we still match the dashboard's wording.
 
-**Known pre-existing failures (as of 2026-08-08): 236 pass, 2 fail.** Both are in `test-visualize.R` (lines ~55 and ~66) and assert the old palette — North `#2166AC`, South `#B2182B` — while `R/04_visualize.R:67` now uses North `#1a5d1a` (green) and South `#2166ac`. The tests are stale, not the code. Don't treat these as a regression you caused; if you touch plot colors, update these expectations to match.
+**Known pre-existing failures (as of 2026-11-13): 436 pass, 2 fail.** Both are in `test-visualize.R` (lines ~55 and ~66) and assert the old palette — North `#2166AC`, South `#B2182B` — while `R/04_visualize.R:67` now uses North `#1a5d1a` (green) and South `#2166ac`. The tests are stale, not the code. Don't treat these as a regression you caused; if you touch plot colors, update these expectations to match.

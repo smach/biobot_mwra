@@ -30,8 +30,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # needs, so these resolve to prebuilt binaries (fast, no compilation).
 RUN . /etc/os-release \
     && REPO="https://packagemanager.posit.co/cran/__linux__/${UBUNTU_CODENAME}/2026-06-02" \
-    && R -q -e "install.packages(c('rvest','httr2','pdftools','dplyr','readr','ggplot2','scales','jsonlite','testthat','withr','xml2'), repos='${REPO}')" \
-    && R -q -e "pkgs <- c('rvest','httr2','pdftools','dplyr','readr','ggplot2','scales','jsonlite','testthat','withr','xml2'); missing <- pkgs[!pkgs %in% rownames(installed.packages())]; if (length(missing)) { stop('Missing packages: ', paste(missing, collapse=', ')) }"
+    && R -q -e "install.packages(c('rvest','httr2','pdftools','dplyr','readr','readxl','ggplot2','scales','jsonlite','testthat','withr','xml2'), repos='${REPO}')" \
+    && R -q -e "pkgs <- c('rvest','httr2','pdftools','dplyr','readr','readxl','ggplot2','scales','jsonlite','testthat','withr','xml2'); missing <- pkgs[!pkgs %in% rownames(installed.packages())]; if (length(missing)) { stop('Missing packages: ', paste(missing, collapse=', ')) }"
 
 # Bake in curl-impersonate (Chrome TLS fingerprint) used to clear MWRA's
 # Imperva bot wall. Kept at the proven v0.6.1 / chrome116 build; the pipeline
