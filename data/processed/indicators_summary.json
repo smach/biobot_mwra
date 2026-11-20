@@ -2,11 +2,11 @@
   "heading": "Other Covid indicators",
   "sections": [
     {
-      "heading": "Massachusetts:",
+      "heading": "Massachusetts, week ending Nov. 14:",
       "lines": [
-        "Reported cases: 1,039, down from 1,155 (week ending Nov. 14)",
-        "ER visits with Covid: 0.60%, up from 0.59% (CDC trend: increasing) (week ending Nov. 14)",
-        "New hospital admissions: 71, down from 84 (week ending Nov. 7)"
+        "Reported cases: 1,039, down from 1,155",
+        "ER visits with Covid: 0.60%, up from 0.59% (CDC trend: increasing)",
+        "New hospital admissions: 76, down from 82"
       ],
       "source_note": "Sources: reported cases from the [Mass. Department of Public Health](https://www.mass.gov/info-details/covid-19-reporting); ER visits from the [CDC](https://data.cdc.gov/Public-Health-Surveillance/NSSP-Emergency-Department-Visit-Trajectories-by-St/rdmq-nq56); hospital admissions from the [CDC](https://data.cdc.gov/Public-Health-Surveillance/Weekly-Hospital-Respiratory-Data-HRD-Metrics-by-Ju/ua7e-t2fy)."
     },
@@ -53,10 +53,10 @@
     },
     {
       "source": "cdc_hosp",
-      "week_end": "2026-11-07",
+      "week_end": "2026-11-14",
       "measure": "hosp_admissions",
-      "current": 71,
-      "previous": 84,
+      "current": 76,
+      "previous": 82,
       "pct_hospitals_reporting": 88.89
     },
     {
@@ -74,5 +74,5 @@
       "tests": 156
     }
   ],
-  "generated": "2026-11-19T22:25:30Z"
+  "generated": "2026-11-20T21:57:02Z"
 }
