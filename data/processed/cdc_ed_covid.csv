@@ -1,6 +1,6 @@
 week_end,ed_pct_covid,ed_trend
-2022-10-01,3.23,Increasing
-2022-10-08,3.4,Increasing
+2022-10-01,3.23,
+2022-10-08,3.4,
 2022-10-15,3.16,No Change
 2022-10-22,2.6,Decreasing
 2022-10-29,2.45,Decreasing
@@ -213,5 +213,6 @@ week_end,ed_pct_covid,ed_trend
 2026-10-17,0.43,No Change
 2026-10-24,0.4,No Change
 2026-10-31,0.5,No Change
-2026-11-07,0.59,Increasing
-2026-11-14,0.6,Increasing
+2026-11-07,0.6,Increasing
+2026-11-14,0.62,Increasing
+2026-11-21,0.66,Increasing

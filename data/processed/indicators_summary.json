@@ -2,19 +2,19 @@
   "heading": "Other Covid indicators",
   "sections": [
     {
-      "heading": "Massachusetts, week ending Nov. 14:",
+      "heading": "Massachusetts:",
       "lines": [
-        "Reported cases: 1,039, down from 1,155",
-        "ER visits with Covid: 0.60%, up from 0.59% (CDC trend: increasing)",
-        "New hospital admissions: 76, down from 82"
+        "Reported cases: 1,328, up from 1,070 (week ending Nov. 21)",
+        "ER visits with Covid: 0.66%, up from 0.62% (CDC trend: increasing) (week ending Nov. 21)",
+        "New hospital admissions: 76, down from 82 (week ending Nov. 14)"
       ],
       "source_note": "Sources: reported cases from the [Mass. Department of Public Health](https://www.mass.gov/info-details/covid-19-reporting); ER visits from the [CDC](https://data.cdc.gov/Public-Health-Surveillance/NSSP-Emergency-Department-Visit-Trajectories-by-St/rdmq-nq56); hospital admissions from the [CDC](https://data.cdc.gov/Public-Health-Surveillance/Weekly-Hospital-Respiratory-Data-HRD-Metrics-by-Ju/ua7e-t2fy)."
     },
     {
-      "heading": "Closer to home, week ending Nov. 14:",
+      "heading": "Closer to home, week ending Nov. 21:",
       "lines": [
-        "Middlesex County: 7.1% of tests positive, up from 7.0%",
-        "Framingham: 8 of 156 tests positive (5.1%)"
+        "Middlesex County: 6.1% of tests positive, down from 7.1%",
+        "Framingham: 13 of 201 tests positive (6.5%)"
       ],
       "source_note": "Source: [Mass. Department of Public Health](https://www.mass.gov/info-details/covid-19-reporting)."
     }
@@ -34,21 +34,21 @@
       "url": "https://data.cdc.gov/Public-Health-Surveillance/Weekly-Hospital-Respiratory-Data-HRD-Metrics-by-Ju/ua7e-t2fy"
     }
   ],
-  "newest_week_end": "2026-11-14",
+  "newest_week_end": "2026-11-21",
   "values": [
     {
       "source": "dph",
-      "week_end": "2026-11-14",
+      "week_end": "2026-11-21",
       "measure": "state_cases",
-      "current": 1039,
-      "previous": 1155
+      "current": 1328,
+      "previous": 1070
     },
     {
       "source": "cdc_ed",
-      "week_end": "2026-11-14",
+      "week_end": "2026-11-21",
       "measure": "ed_pct_covid",
-      "current": 0.6,
-      "previous": 0.59,
+      "current": 0.66,
+      "previous": 0.62,
       "cdc_trend": "Increasing"
     },
     {
@@ -61,18 +61,18 @@
     },
     {
       "source": "dph",
-      "week_end": "2026-11-14",
+      "week_end": "2026-11-21",
       "measure": "county_positivity_pct",
-      "current": 7.09117221418234,
-      "previous": 7.02087286527514
+      "current": 6.10648498612163,
+      "previous": 7.06459054209919
     },
     {
       "source": "dph",
-      "week_end": "2026-11-14",
+      "week_end": "2026-11-21",
       "measure": "town_tests",
-      "positive_tests": 8,
-      "tests": 156
+      "positive_tests": 13,
+      "tests": 201
     }
   ],
-  "generated": "2026-11-20T21:57:02Z"
+  "generated": "2026-11-25T23:15:50Z"
 }
